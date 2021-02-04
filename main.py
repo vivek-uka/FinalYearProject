@@ -103,7 +103,7 @@ if __name__ == '__main__':
 			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[1])))
 			print("x , y ", state[0], state[1])
 			print("v, psidot", u[0], u[1])
-			rate.sleep()
+		rate.sleep()
 
 	
 	rospy.spin()
