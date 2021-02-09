@@ -7,6 +7,17 @@ from time import time
 from multi_robot_mpc.msg import States
 
 state = [0, 0, 0]
+states_x0 = []
+states_y0 = []
+states_psi0 = []
+
+states_x1 = []
+states_y1 = []
+states_psi1 = []
+
+states_x2 = []
+states_y2 = []
+states_psi2 = []
 
 rx = 0
 
@@ -67,6 +78,26 @@ class ModelPredictiveControl:
 				u[2*i + 1] = -self.psidot_max
 		return u
 
+def statesCallback0(data):
+	global states_x0, states_y0, states_psi0
+
+	states_x0 = data.x
+	states_y0 = data.y
+	states_psi0 = data.psi
+
+def statesCallback1(data):
+	global states_x1, states_y1, states_psi1
+
+	states_x1 = data.x
+	states_y1 = data.y
+	states_psi1 = data.psi
+
+def statesCallback2(data):
+	global states_x2, states_y2, states_psi2
+
+	states_x2 = data.x
+	states_y2 = data.y
+	states_psi2 = data.psi
 
 def callback(data):
 	global rx, state
@@ -99,6 +130,11 @@ if __name__ == '__main__':
 	freq = 5
 	rospy.init_node('my_robot3', anonymous='True')	
 	rospy.Subscriber('tb3_3/odom', Odometry, callback)	
+
+	rospy.Subscriber('tb3_0/pre_state', States, statesCallback0)
+	rospy.Subscriber('tb3_1/pre_state', States, statesCallback1)
+	rospy.Subscriber('tb3_2/pre_state', States, statesCallback2)
+
 	pub = rospy.Publisher('tb3_3/cmd_vel', Twist, queue_size=10)
 	pub2 = rospy.Publisher('tb3_3/pre_state', States, queue_size=10)
 
@@ -110,8 +146,8 @@ if __name__ == '__main__':
 	while not rospy.is_shutdown():
 		if rx:
 			u = myRobot.optimize(state, u)
-			pub2.publish(myRobot.pre_states)
-			#pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[1])))
+			#pub2.publish(myRobot.pre_states)
+			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[1])))
 			print("x , y ", state[0], state[1])
 			print("v, psidot", u[0], u[1])
 		rate.sleep()

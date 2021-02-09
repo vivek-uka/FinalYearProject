@@ -8,6 +8,19 @@ from multi_robot_mpc.msg import States
 
 state = [0, 0, 0]
 
+states_x0 = []
+states_y0 = []
+states_psi0 = []
+
+states_x1 = []
+states_y1 = []
+states_psi1 = []
+
+states_x3 = []
+states_y3 = []
+states_psi3 = []
+
+
 rx = 0
 
 class ModelPredictiveControl:
@@ -67,6 +80,26 @@ class ModelPredictiveControl:
 				u[2*i + 1] = -self.psidot_max
 		return u
 
+def statesCallback0(data):
+	global states_x0, states_y0, states_psi0
+
+	states_x0 = data.x
+	states_y0 = data.y
+	states_psi0 = data.psi
+
+def statesCallback1(data):
+	global states_x1, states_y1, states_psi1
+
+	states_x1 = data.x
+	states_y1 = data.y
+	states_psi1 = data.psi
+
+def statesCallback3(data):
+	global states_x3, states_y3, states_psi3
+
+	states_x3 = data.x
+	states_y3 = data.y
+	states_psi3 = data.psi
 
 def callback(data):
 	global rx, state
@@ -99,6 +132,11 @@ if __name__ == '__main__':
 	freq = 5
 	rospy.init_node('my_robot2', anonymous='True')	
 	rospy.Subscriber('tb3_2/odom', Odometry, callback)	
+
+	rospy.Subscriber('tb3_0/pre_state', States, statesCallback0)
+	rospy.Subscriber('tb3_1/pre_state', States, statesCallback1)
+	rospy.Subscriber('tb3_3/pre_state', States, statesCallback3)
+
 	pub = rospy.Publisher('tb3_2/cmd_vel', Twist, queue_size=10)
 	pub2 = rospy.Publisher('tb3_2/pre_state', States, queue_size=10)
 
