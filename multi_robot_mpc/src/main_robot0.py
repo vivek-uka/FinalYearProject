@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import rospy
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Vector3
@@ -21,8 +22,8 @@ states_x3 = []
 states_y3 = []
 states_psi3 = []
 
-rx = 0
-
+rx0 = 0
+rx1 = 0
 
 
 class ModelPredictiveControl:
@@ -56,7 +57,8 @@ class ModelPredictiveControl:
 		return u
 
 	def cost_function(self, u, state): 
-		
+		global states_x1, states_y1 
+
 		psi = [state[2] + u[self.horizon] * self.dt]
 		for i in range(1, self.horizon):
 			psi.append(psi[i-1] + u[self.horizon + i] * self.dt)
@@ -66,26 +68,30 @@ class ModelPredictiveControl:
 			
 		self.pre_states.x = rn._value
 		self.pre_states.y = re._value
-		self.pre_states.psi = psi
+		self.pre_states.psi = np.array(psi)._value
 		self.pub2.publish(self.pre_states)
 		
 		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
+		#cost_xy = 5.0 * (rn - self.goal[0]) ** 2 + 5.0 * (re - self.goal[1]) ** 2 
+		cost_dist = 5.0 * (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - 0.5) ** 2
+		#cost_psi = 0.01 * (np.array(psi) - self.psi_terminal) ** 2
+
+		cost_ = 100 * lamda_1 + 100 * lamda_2 + cost_dist #+ cost_psi + cost_xy #+ cost_dist
 		
-		cost_ = 5.0 * (rn - self.goal[0])**2 + 5.0 * (re - self.goal[1])**2 + 10 * lamda_1 + 10 * lamda_2
-		
-		cost = np.sum(cost_) + (psi[-1] - self.psi_terminal) ** 2
+		cost = np.sum(cost_) 
 		
 		return cost
 
 
 
 def statesCallback1(data):
-	global states_x1, states_y1, states_psi1
+	global states_x1, states_y1, states_psi1, rx1
 
 	states_x1 = data.x
 	states_y1 = data.y
 	states_psi1 = data.psi
+	rx1 = 1
 
 def statesCallback2(data):
 	global states_x2, states_y2, states_psi2
@@ -102,7 +108,7 @@ def statesCallback3(data):
 	states_psi3 = data.psi
 
 def odomCallback(data):
-	global rx, state
+	global rx0, state
 
 	x = data.pose.pose.position.x
 	y = data.pose.pose.position.y
@@ -125,39 +131,40 @@ def odomCallback(data):
 	state[1] = y
 	state[2] = psi
 
-	rx = 1
+	rx0 = 1
 
 if __name__ == '__main__':
 	
-	freq = 5
+	freq = 10
 	rospy.init_node('my_robot0', anonymous='True')	
 	rospy.Subscriber('tb3_0/odom', Odometry, odomCallback)
 
 	rospy.Subscriber('tb3_1/pre_state', States, statesCallback1)
 	rospy.Subscriber('tb3_2/pre_state', States, statesCallback2)
 	rospy.Subscriber('tb3_3/pre_state', States, statesCallback3)
-
+	
+	
 	pub = rospy.Publisher('tb3_0/cmd_vel', Twist, queue_size=10)
 	
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(0.0, 2.0, 0.0, 2.84, 0.22)
+	myRobot = ModelPredictiveControl(1.0, 1.0, np.pi/2, 2.84, 0.22)
 	v = np.zeros(myRobot.horizon)
 	psidot = np.zeros(myRobot.horizon)
 	
 	u = np.hstack((v, psidot))	
 	while not rospy.is_shutdown():
-		if rx:
+		if rx0 and rx1:
 			u = myRobot.optimize(state, u)	
 			dist = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
 			res_psi = abs(state[2] - myRobot.psi_terminal)		
-			if dist >= 0.05 or res_psi >= 1*np.pi/180.0:
+			if True:#dist >= 0.05 or res_psi >= (2.0*np.pi/180.0):
 				pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
 			else:
 				print("STOPPPPPPP")
 				pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
-				
+			#pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 1.0)))	
 			print("x, y, psi", state[0], state[1], state[2] * 180.0 / np.pi)
 			print("v, psidot", u[0], u[myRobot.horizon])
 		rate.sleep()
