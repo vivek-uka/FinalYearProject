@@ -9,7 +9,7 @@ from multi_robot_mpc.msg import States
 
 
 
-state = [0, 0, 0]
+state = [1, 0, 1.57]
 states_x1 = []
 states_y1 = []
 states_psi1 = []
@@ -22,10 +22,12 @@ states_x3 = []
 states_y3 = []
 states_psi3 = []
 
-rx = 0
+rx2 = 5
+rx1 = 0
+rx0 = 0
 
-
-
+psidot_optimal = 0
+v_optimal = 0
 class ModelPredictiveControl:
 
 	def __init__(self, x_g, y_g, psi_g, angular_max, linear_max):
@@ -53,11 +55,13 @@ class ModelPredictiveControl:
 		    if k != steps - 1:
 				u -= lr * dx / (np.sqrt(dx_mean_sqr) + eps)
 				
-		print("Optimization Time = ", time()-startTime)
+		#print("Optimization Time = ", time()-startTime)
+		self.pub2.publish(self.pre_states)
 		return u
 
 	def cost_function(self, u, state): 
-		
+		global states_x1, states_x0, states_y1, states_y0
+
 		psi = [state[2] + u[self.horizon] * self.dt]
 		for i in range(1, self.horizon):
 			psi.append(psi[i-1] + u[self.horizon + i] * self.dt)
@@ -67,14 +71,20 @@ class ModelPredictiveControl:
 			
 		self.pre_states.x = rn._value
 		self.pre_states.y = re._value
-		self.pre_states.psi = psi
-		self.pub2.publish(self.pre_states)
+		self.pre_states.psi = np.array(psi)._value
+		#self.pre_states.x = np.full(myRobot.horizon, state[0])
+		#self.pre_states.y = np.full(myRobot.horizon, state[1])
+		#self.pre_states.psi = np.full(myRobot.horizon, state[2])
 		
-		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
+		lamda_1 = np.maximum(np.zeros(self.horizon), -0.0*self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
-		cost_xy = 5.0 * (rn - self.goal[0]) ** 2 + 5.0 * (re - self.goal[1]) ** 2 
-		cost_psi = 0.01 * (np.array([psi]) - self.psi_terminal) ** 2
-		cost_ = cost_xy + cost_psi + 10 * lamda_1 + 10 * lamda_2 
+
+		cost_dist = 5.0 * (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - 1) ** 2 + 5.0 * (np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2) - 1) ** 2 		
+		cost_psi = 2.0 * (np.array(psi) - states_psi1) ** 2
+
+		#cost_xy = 5.0 * (rn - self.goal[0]) ** 2 + 5.0 * (re - self.goal[1]) ** 2 
+		#cost_psi = 0.01 * (np.array(psi) - self.psi_terminal) ** 2
+		cost_ = 100 * lamda_1 + 100 * lamda_2 + cost_dist + cost_psi#+ cost_xy + cost_psi  
 		
 		cost = np.sum(cost_) 
 		
@@ -83,18 +93,20 @@ class ModelPredictiveControl:
 
 
 def statesCallback0(data):
-	global states_x0, states_y0, states_psi0
+	global states_x0, states_y0, states_psi0, rx0
 
 	states_x0 = data.x
 	states_y0 = data.y
 	states_psi0 = data.psi
+	rx0 = 1
 
 def statesCallback1(data):
-	global states_x1, states_y1, states_psi1
+	global states_x1, states_y1, states_psi1, rx1
 
 	states_x1 = data.x
 	states_y1 = data.y
 	states_psi1 = data.psi
+	rx1 = 1
 
 def statesCallback3(data):
 	global states_x3, states_y3, states_psi3
@@ -104,7 +116,7 @@ def statesCallback3(data):
 	states_psi3 = data.psi
 
 def odomCallback(data):
-	global rx, state
+	global rx2, state, v_optimal, psidot_optimal
 
 	x = data.pose.pose.position.x
 	y = data.pose.pose.position.y
@@ -127,11 +139,12 @@ def odomCallback(data):
 	state[1] = y
 	state[2] = psi
 
-	rx = 1
+	if rx2 == 5:
+		rx2 = 1
 
 if __name__ == '__main__':
 	
-	freq = 5
+	freq = 10
 	rospy.init_node('my_robot2', anonymous='True')	
 	rospy.Subscriber('tb3_2/odom', Odometry, odomCallback)
 
@@ -150,18 +163,19 @@ if __name__ == '__main__':
 	
 	u = np.hstack((v, psidot))	
 	while not rospy.is_shutdown():
-		if rx:
+		if rx2 == 1.0:
+			myRobot.pre_states.x = np.full(myRobot.horizon, state[0])
+			myRobot.pre_states.y = np.full(myRobot.horizon, state[1])
+			myRobot.pre_states.psi = np.full(myRobot.horizon, state[2])
+			myRobot.pub2.publish(myRobot.pre_states)
+		if rx1 and rx0:
+			rx2 = 0.0				
 			u = myRobot.optimize(state, u)	
-			dist = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
-			res_psi = abs(state[2] - myRobot.psi_terminal)		
-			if dist >= 0.05 or res_psi >= (1.0*np.pi/180.0):
-				pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
-			else:
-				print("STOPPPPPPP")
-				pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
-				
-			print("x, y, psi", state[0], state[1], state[2] * 180.0 / np.pi)
-			print("v, psidot", u[0], u[myRobot.horizon])
+			v_optimal = u[0]
+			psidot_optimal = u[myRobot.horizon]	
+			
+			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
+			
 		rate.sleep()
 
 	
