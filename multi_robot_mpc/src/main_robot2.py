@@ -25,6 +25,7 @@ states_psi3 = []
 rx2 = 5
 rx1 = 0
 rx0 = 0
+rx3 = 0
 
 psidot_optimal = 0
 v_optimal = 0
@@ -60,8 +61,7 @@ class ModelPredictiveControl:
 		return u
 
 	def cost_function(self, u, state): 
-		global states_x1, states_x0, states_y1, states_y0
-
+	
 		psi = [state[2] + u[self.horizon] * self.dt]
 		for i in range(1, self.horizon):
 			psi.append(psi[i-1] + u[self.horizon + i] * self.dt)
@@ -72,19 +72,17 @@ class ModelPredictiveControl:
 		self.pre_states.x = rn._value
 		self.pre_states.y = re._value
 		self.pre_states.psi = np.array(psi)._value
-		#self.pre_states.x = np.full(myRobot.horizon, state[0])
-		#self.pre_states.y = np.full(myRobot.horizon, state[1])
-		#self.pre_states.psi = np.full(myRobot.horizon, state[2])
-		
+		self.pre_states.x0 = state[0]
+		self.pre_states.y0 = state[1]
+		self.pre_states.psi0 = state[2]
+
 		lamda_1 = np.maximum(np.zeros(self.horizon), -0.0*self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
+		
 
-		cost_dist = 5.0 * (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - 1) ** 2 + 5.0 * (np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2) - 1) ** 2 		
-		cost_psi = 2.0 * (np.array(psi) - states_psi1) ** 2
-
-		#cost_xy = 5.0 * (rn - self.goal[0]) ** 2 + 5.0 * (re - self.goal[1]) ** 2 
-		#cost_psi = 0.01 * (np.array(psi) - self.psi_terminal) ** 2
-		cost_ = 100 * lamda_1 + 100 * lamda_2 + cost_dist + cost_psi#+ cost_xy + cost_psi  
+		cost_dist = (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - 1.0) ** 2 + (np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2) - 1.0) ** 2 + (np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2) - 1.0) ** 2
+		cost_psi = (np.array(psi) - states_psi1) ** 2
+		cost_ = 100 * lamda_1 + 100 * lamda_2 + 50 * cost_dist + 2 * cost_psi 
 		
 		cost = np.sum(cost_) 
 		
@@ -109,11 +107,12 @@ def statesCallback1(data):
 	rx1 = 1
 
 def statesCallback3(data):
-	global states_x3, states_y3, states_psi3
+	global states_x3, states_y3, states_psi3, rx3
 
 	states_x3 = data.x
 	states_y3 = data.y
 	states_psi3 = data.psi
+	rx3 = 1
 
 def odomCallback(data):
 	global rx2, state, v_optimal, psidot_optimal
@@ -168,7 +167,7 @@ if __name__ == '__main__':
 			myRobot.pre_states.y = np.full(myRobot.horizon, state[1])
 			myRobot.pre_states.psi = np.full(myRobot.horizon, state[2])
 			myRobot.pub2.publish(myRobot.pre_states)
-		if rx1 and rx0:
+		if rx1 and rx0 and rx3:
 			rx2 = 0.0				
 			u = myRobot.optimize(state, u)	
 			v_optimal = u[0]
