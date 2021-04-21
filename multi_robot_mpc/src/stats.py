@@ -2,7 +2,7 @@
 import rospy
 import numpy as np
 from multi_robot_mpc.msg import States
-
+import matplotlib.pyplot as plt
 
 rx0 = 0
 rx1 = 0
@@ -99,17 +99,27 @@ if __name__ == '__main__':
 	dist_12 = []
 	dist_13 = []
 	dist_23 = []
+	time = []
+	i = 1/freq
+
+	fig= plt.figure()
 	while not rospy.is_shutdown():
 
 		if rx0 >= 10 and rx1 >= 10 and rx2 >= 10 and rx3 >= 10:
+			plt.clf()
 			dist_01.append(dist(state0[0], state0[1], state1[0], state1[1]) - 1.0)
 			dist_02.append(dist(state0[0], state0[1], state2[0], state2[1]) - 1.0)
 			dist_03.append(dist(state0[0], state0[1], state3[0], state3[1]) - 1.0)
 			dist_12.append(dist(state1[0], state1[1], state2[0], state2[1]) - 1.0)
 			dist_13.append(dist(state1[0], state1[1], state3[0], state3[1]) - np.sqrt(3))
-			dist_23.append(dist(state2[0], state2[1], state3[0], state3[1]) - 1.0) 
+			dist_23.append(dist(state2[0], state2[1], state3[0], state3[1]) - 1.0)
+			plt.plot([state0[0], state1[0], state2[0], state3[0], state0[0]], [state0[1], state1[1], state2[1], state3[1], state0[1]])
+			plt.xlim(-10, 10)
+			plt.ylim(-10, 10)
+			plt.pause(0.000001)
+			plt.draw()
 			#print(round(dist_01[-1], 3), round(dist_02[-1], 3), round(dist_03[-1], 3), round(dist_12[-1], 3), round(dist_13[-1], 3), round(dist_23[-1], 3))
-			print(round(np.mean(dist_01), 3), round(np.mean(dist_02), 3), round(np.mean(dist_03), 3), round(np.mean(dist_12), 3), round(np.mean(dist_13), 3), round(np.mean(dist_23), 3))
+			#print(round(np.mean(dist_01), 3), round(np.mean(dist_02), 3), round(np.mean(dist_03), 3), round(np.mean(dist_12), 3), round(np.mean(dist_13), 3), round(np.mean(dist_23), 3))
 		rate.sleep()
 	rospy.spin()
 

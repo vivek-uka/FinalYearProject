@@ -44,11 +44,13 @@ class ModelPredictiveControl:
 		self.psi_terminal = psi_g
 		self.pub2 = rospy.Publisher('tb3_0/pre_state', States, queue_size=10)
 		self.stop = 1
+		l = 1 #square config
+		self.config_matrix = [[0, l/np.sqrt(2), l, l/np.sqrt(2)], [l/np.sqrt(2), 0, l/np.sqrt(2), l], [l, l/np.sqrt(2), 0, l/np.sqrt(2)], [l/np.sqrt(2), l, l/np.sqrt(2), 0]]
 
 	def optimize(self, state, u, steps=25, lr=0.001, decay=0.9, eps=1e-8):
 
 		dx_mean_sqr = np.zeros(self.horizon*2)
-		dF = grad(self.cost_function) 
+		dF = grad(self.cost_maintain_config) 
 
 		startTime = time()
 		for k in range(steps):
@@ -61,7 +63,7 @@ class ModelPredictiveControl:
 		self.pub2.publish(self.pre_states)
 		return u
 
-	def cost_function(self, u, state): 
+	def cost_maintain_config(self, u, state): 
 
 		psi = [state[2] + u[self.horizon] * self.dt]
 		for i in range(1, self.horizon):
@@ -81,11 +83,12 @@ class ModelPredictiveControl:
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
 		#cost_xy = 5.0 * (rn - self.goal[0]) ** 2 + 5.0 * (re - self.goal[1]) ** 2 		
 		
-		cost_dist = (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - 1.0) ** 2 + (np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2) - 1.0) ** 2 + (np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2) - 1.0) ** 2
+		cost_dist = (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - self.config_matrix[0][1]) ** 2 + (np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2) - self.config_matrix[0][2]) ** 2 + (np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2) - self.config_matrix[0][3]) ** 2
 		cost_psi = (np.array(psi) - states_psi1) ** 2
 		cost_ = 100 * lamda_1 + 100 * lamda_2 + 50 * cost_dist + 2 * cost_psi 
 		
 		cost = np.sum(cost_) 
+
 		
 		return cost
 	
