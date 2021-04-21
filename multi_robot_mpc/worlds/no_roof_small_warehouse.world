@@ -9,7 +9,6 @@
       <real_time_update_rate>1000</real_time_update_rate>
     </physics>
 
-    
         <!--model name="aws_robomaker_warehouse_RoofB_01_001">
         <include>
             <uri>model://aws_robomaker_warehouse_RoofB_01</uri>
