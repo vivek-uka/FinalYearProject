@@ -6,7 +6,7 @@ import autograd.numpy as np
 from autograd import grad
 from time import time
 from multi_robot_mpc.msg import States
-
+import matplotlib.pyplot as plt
 
 
 state = [0.0, 0, 1.57]
@@ -34,7 +34,7 @@ class ModelPredictiveControl:
 
 	def __init__(self, x_g, y_g, psi_g, angular_max, linear_max):
 
-		self.horizon = 5
+		self.horizon = 10
 		self.control = 1
 		self.dt = 0.5
 		self.psidot_max = angular_max
@@ -45,7 +45,8 @@ class ModelPredictiveControl:
 		self.pub2 = rospy.Publisher('tb3_0/pre_state', States, queue_size=10)
 		self.stop = 1
 		self.job = 0 # follower = 0 leader = 1
-		
+		self.te = 0.0
+		self.loop = 0.0
 		self.obsx = [-6, -6, -5, -5, -5.5] 
 		self.obsy = [0.5, 1.5, 1.5, 0.5, 1]
 		self.r = [0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
@@ -70,9 +71,9 @@ class ModelPredictiveControl:
 		    if k != steps - 1:
 				u -= lr * dx / (np.sqrt(dx_mean_sqr) + eps)
 				
-		print("Optimization Time = ", time()-startTime)
 		self.pub2.publish(self.pre_states)
-		
+		self.te += time() - startTime
+		self.loop += 1
 		return u
 
 	def cost_maintain_config(self, u, state): 
@@ -140,10 +141,10 @@ class ModelPredictiveControl:
 		cost_psi = (psi - self.psi_terminal) ** 2
 
 		dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
-		cost_obs = ((self.r[0] + 0.1 + 0.25 - dist_obs)/(abs(self.r[0] + 0.1 + 0.25 - dist_obs)) + 1) * (1/dist_obs)
+		cost_obs = ((self.r[0] + 0.1 + 0.25 - dist_obs)/(abs(self.r[0] + 0.1 + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
 		cost_obs = np.sum(cost_obs, axis=0)
 		
-		cost_ = 100 * lamda_1 + 100 * lamda_2 + 10 * cost_xy + 0.02 * cost_psi + 1.5 * cost_obs
+		cost_ = 200 * lamda_1 + 200 * lamda_2 + 10 * cost_xy + 0.02 * cost_psi + 1.5 * cost_obs
 		cost = np.sum(cost_) 
 
 		return cost
@@ -219,13 +220,17 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(-4.5, 2.2, -np.pi/2, 2.84, 0.22)
-	v = np.zeros(myRobot.horizon)
-	psidot = np.zeros(myRobot.horizon)
-	u = np.hstack((v, psidot))	
-
-	mode = "multi"
+	myRobot = ModelPredictiveControl(-4.5, 2, 3*np.pi/4, 2.84, 0.22)
+	u = np.zeros(2*myRobot.horizon)
+	
+	iter = 0
+	mode = "solo"
 	while not rospy.is_shutdown():
+		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
+		res_x = abs(state[0]- myRobot.goal[0])
+		res_y = abs(state[1]- myRobot.goal[1])
+		res_psi = abs(state[2]- myRobot.psi_terminal)
+
 		if rx0 == 1.0:
 			myRobot.pre_states.x = np.full(myRobot.horizon, state[0])
 			myRobot.pre_states.y = np.full(myRobot.horizon, state[1])
@@ -233,8 +238,14 @@ if __name__ == '__main__':
 			myRobot.pub2.publish(myRobot.pre_states)
 		if (rx1 and rx2 and rx3) or mode == "solo":
 			rx0 = 0.0				
+			
 			u = myRobot.optimize(state, u, mode)
 			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
-			
+			iter += 1
+
+			if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
+				print("Mean optimization Time: ", myRobot.te/myRobot.loop)
+			#	pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
+			#	break				
 		rate.sleep()
 	rospy.spin()

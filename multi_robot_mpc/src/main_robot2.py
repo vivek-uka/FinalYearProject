@@ -200,10 +200,8 @@ if __name__ == '__main__':
 	rate = rospy.Rate(freq)
 
 	myRobot = ModelPredictiveControl(1.0, 3.0, -np.pi/4, 2.84, 0.22)
-	v = np.zeros(myRobot.horizon)
-	psidot = np.zeros(myRobot.horizon)
-	
-	u = np.hstack((v, psidot))	
+	u = np.zeros(2*myRobot.horizon)
+		
 	mode = "multi"
 	while not rospy.is_shutdown():
 		if rx2 == 1.0:

@@ -204,10 +204,8 @@ if __name__ == '__main__':
 	rate = rospy.Rate(freq)
 
 	myRobot = ModelPredictiveControl(-5, -1.0, 0.0, 2.84, 0.22)
-	v = np.zeros(myRobot.horizon)
-	psidot = np.zeros(myRobot.horizon)
-	
-	u = np.hstack((v, psidot))	
+	u = np.zeros(2*myRobot.horizon)
+		
 	mode = "multi"
 	while not rospy.is_shutdown():
 		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
