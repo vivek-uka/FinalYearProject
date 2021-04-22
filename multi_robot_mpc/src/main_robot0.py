@@ -46,6 +46,11 @@ class ModelPredictiveControl:
 		self.stop = 1
 		self.job = 0 # follower = 0 leader = 1
 		
+		self.obsx = [-6, -6, -5, -5, -5.5] 
+		self.obsy = [0.5, 1.5, 1.5, 0.5, 1]
+		self.r = [0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
+		
+
 		l = 1 #square config
 		self.config_matrix = [[0, l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2)], [l/np.sqrt(2), 0, l/np.sqrt(2), 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l/np.sqrt(2), 0, l/np.sqrt(2)], [l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2), 0]]
 
@@ -65,22 +70,31 @@ class ModelPredictiveControl:
 		    if k != steps - 1:
 				u -= lr * dx / (np.sqrt(dx_mean_sqr) + eps)
 				
-		#print("Optimization Time = ", time()-startTime)
+		print("Optimization Time = ", time()-startTime)
 		self.pub2.publish(self.pre_states)
+		
 		return u
 
 	def cost_maintain_config(self, u, state): 
 
 		psi = [state[2] + u[self.horizon] * self.dt]
+		rn = [state[0] + u[0] * np.cos(psi[0]) * self.dt]
+		re = [state[1] + u[0] * np.sin(psi[0]) * self.dt]
+
 		for i in range(1, self.horizon):
 			psi.append(psi[i-1] + u[self.horizon + i] * self.dt)
-		
-		rn = state[0] + np.array([u[i] * np.cos(psi[i]) * self.dt for i in range(self.horizon)], dtype=float)
-		re = state[1] + np.array([u[i] * np.sin(psi[i]) * self.dt for i in range(self.horizon)], dtype=float)
+			rn.append(rn[i-1] + u[i] * np.cos(psi[i]) * self.dt)
+			re.append(re[i-1] + u[i] * np.sin(psi[i]) * self.dt)	
+		rn = np.array(rn)
+		re = np.array(re)
+		psi = np.array(psi)
+
+		#rn = state[0] + np.array([u[i] * np.cos(psi[i]) * self.dt *(i+1) for i in range(self.horizon)], dtype=float)
+		#re = state[1] + np.array([u[i] * np.sin(psi[i]) * self.dt *(i+1) for i in range(self.horizon)], dtype=float)
 			
 		self.pre_states.x = rn._value
 		self.pre_states.y = re._value
-		self.pre_states.psi = np.array(psi)._value
+		self.pre_states.psi = psi._value
 		self.pre_states.x0 = state[0]
 		self.pre_states.y0 = state[1]
 		self.pre_states.psi0 = state[2]
@@ -90,7 +104,7 @@ class ModelPredictiveControl:
 		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2 		
 		
 		cost_dist = (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - self.config_matrix[0][1]) ** 2 + (np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2) - self.config_matrix[0][2]) ** 2 + (np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2) - self.config_matrix[0][3]) ** 2
-		cost_psi = (np.array(psi) - states_psi1) ** 2
+		cost_psi = (psi - states_psi1) ** 2
 		cost_ = 100 * lamda_1 + 100 * lamda_2 + 50 * cost_dist + 2 * cost_psi + 10 * self.job * cost_xy 
 		
 		cost = np.sum(cost_) 
@@ -99,20 +113,37 @@ class ModelPredictiveControl:
 		return cost
 	
 	def cost_goal_only(self, u, state):
+
 		psi = [state[2] + u[self.horizon] * self.dt]
+		rn = [state[0] + u[0] * np.cos(psi[0]) * self.dt]
+		re = [state[1] + u[0] * np.sin(psi[0]) * self.dt]
+
 		for i in range(1, self.horizon):
 			psi.append(psi[i-1] + u[self.horizon + i] * self.dt)
-		
-		rn = state[0] + np.array([u[i] * np.cos(psi[i]) * self.dt for i in range(self.horizon)], dtype=float)
-		re = state[1] + np.array([u[i] * np.sin(psi[i]) * self.dt for i in range(self.horizon)], dtype=float)
+			rn.append(rn[i-1] + u[i] * np.cos(psi[i]) * self.dt)
+			re.append(re[i-1] + u[i] * np.sin(psi[i]) * self.dt)	
+		rn = np.array(rn)
+		re = np.array(re)
+		psi = np.array(psi)
 
-		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max*0.0 - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
+			
+		self.pre_states.x = rn._value
+		self.pre_states.y = re._value
+		self.pre_states.psi = psi._value
+		self.pre_states.x0 = state[0]
+		self.pre_states.y0 = state[1]
+		self.pre_states.psi0 = state[2]
+
+		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
 		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2 	
-		cost_psi = (np.array(psi) - self.psi_terminal) ** 2
+		cost_psi = (psi - self.psi_terminal) ** 2
 
-		cost_ = 100 * lamda_1 + 100 * lamda_2 + 10 * cost_xy + 0.02 * cost_psi
-
+		dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
+		cost_obs = ((self.r[0] + 0.1 + 0.25 - dist_obs)/(abs(self.r[0] + 0.1 + 0.25 - dist_obs)) + 1) * (1/dist_obs)
+		cost_obs = np.sum(cost_obs, axis=0)
+		
+		cost_ = 100 * lamda_1 + 100 * lamda_2 + 10 * cost_xy + 0.02 * cost_psi + 1.5 * cost_obs
 		cost = np.sum(cost_) 
 
 		return cost
@@ -188,7 +219,7 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(1.0, 5.0, -np.pi/2, 2.84, 0.22)
+	myRobot = ModelPredictiveControl(-4.5, 2.2, -np.pi/2, 2.84, 0.22)
 	v = np.zeros(myRobot.horizon)
 	psidot = np.zeros(myRobot.horizon)
 	u = np.hstack((v, psidot))	

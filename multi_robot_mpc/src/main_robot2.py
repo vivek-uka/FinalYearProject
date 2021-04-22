@@ -71,15 +71,20 @@ class ModelPredictiveControl:
 	def cost_maintain_config(self, u, state): 
 	
 		psi = [state[2] + u[self.horizon] * self.dt]
+		rn = [state[0] + u[0] * np.cos(psi[0]) * self.dt]
+		re = [state[1] + u[0] * np.sin(psi[0]) * self.dt]
+
 		for i in range(1, self.horizon):
 			psi.append(psi[i-1] + u[self.horizon + i] * self.dt)
-		
-		rn = state[0] + np.array([u[i] * np.cos(psi[i]) * self.dt for i in range(self.horizon)], dtype=float)
-		re = state[1] + np.array([u[i] * np.sin(psi[i]) * self.dt for i in range(self.horizon)], dtype=float)
-			
+			rn.append(rn[i-1] + u[i] * np.cos(psi[i]) * self.dt)
+			re.append(re[i-1] + u[i] * np.sin(psi[i]) * self.dt)
+		rn = np.array(rn)
+		re = np.array(re)
+		psi = np.array(psi)
+
 		self.pre_states.x = rn._value
 		self.pre_states.y = re._value
-		self.pre_states.psi = np.array(psi)._value
+		self.pre_states.psi = psi._value
 		self.pre_states.x0 = state[0]
 		self.pre_states.y0 = state[1]
 		self.pre_states.psi0 = state[2]
@@ -89,7 +94,7 @@ class ModelPredictiveControl:
 		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2 
 
 		cost_dist = (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - self.config_matrix[2][1]) ** 2 + (np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2) - self.config_matrix[2][0]) ** 2 + (np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2) - self.config_matrix[2][3]) ** 2
-		cost_psi = (np.array(psi) - states_psi1) ** 2
+		cost_psi = (psi - states_psi1) ** 2
 		cost_ = 100 * lamda_1 + 100 * lamda_2 + 50 * cost_dist + 2 * cost_psi + 10 * self.job * cost_xy
 		
 		cost = np.sum(cost_) 
@@ -98,16 +103,28 @@ class ModelPredictiveControl:
 
 	def cost_goal_only(self, u, state):
 		psi = [state[2] + u[self.horizon] * self.dt]
+		rn = [state[0] + u[0] * np.cos(psi[0]) * self.dt]
+		re = [state[1] + u[0] * np.sin(psi[0]) * self.dt]
+
 		for i in range(1, self.horizon):
 			psi.append(psi[i-1] + u[self.horizon + i] * self.dt)
-		
-		rn = state[0] + np.array([u[i] * np.cos(psi[i]) * self.dt for i in range(self.horizon)], dtype=float)
-		re = state[1] + np.array([u[i] * np.sin(psi[i]) * self.dt for i in range(self.horizon)], dtype=float)
+			rn.append(rn[i-1] + u[i] * np.cos(psi[i]) * self.dt)
+			re.append(re[i-1] + u[i] * np.sin(psi[i]) * self.dt)
+		rn = np.array(rn)
+		re = np.array(re)
+		psi = np.array(psi)
+
+		self.pre_states.x = rn._value
+		self.pre_states.y = re._value
+		self.pre_states.psi = psi._value
+		self.pre_states.x0 = state[0]
+		self.pre_states.y0 = state[1]
+		self.pre_states.psi0 = state[2]
 
 		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max*0.0 - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
 		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2 	
-		cost_psi = (np.array(psi) - self.psi_terminal) ** 2
+		cost_psi = (psi - self.psi_terminal) ** 2
 
 		cost_ = 100 * lamda_1 + 100 * lamda_2 + 10 * cost_xy + 0.02 * cost_psi
 
