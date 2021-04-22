@@ -8,5 +8,5 @@ Change gazebo model path by adding this line in ~/.bashrc
 * source bashrc file  
 
 #### Launch Commands  
-* ```roslaunch multi_robot_mpc multi_robot_nodes.launch``` launch DMPC node for each robot
+* ```roslaunch multi_robot_mpc multi_robot_nodes.launch``` launch node for each robot
 * ```roslaunch multi_robot_mpc multi_robot_env.launch``` multirobot environment in gazebo
