@@ -34,7 +34,7 @@ class ModelPredictiveControl:
 
 	def __init__(self, x_g, y_g, psi_g, angular_max, linear_max):
 
-		self.horizon = 10
+		self.horizon = 5
 		self.control = 1
 		self.dt = 0.5
 		self.psidot_max = angular_max
@@ -47,9 +47,9 @@ class ModelPredictiveControl:
 		self.job = 0 # follower = 0 leader = 1
 		self.te = 0.0
 		self.loop = 0.0
-		self.obsx = [-6, -6, -5, -5, -5.5] 
-		self.obsy = [0.5, 1.5, 1.5, 0.5, 1]
-		self.r = [0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
+		self.obsx = [-1.7, -0.36, -1.7, -1, -0.36]#[-6, -6, -5, -5, -5.5] 
+		self.obsy = [-1.5, -0.36, -0.36, -0.8, -1.5]#[0.5, 1.5, 1.5, 0.5, 1]
+		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
 		
 
 		l = 1 #square config
@@ -106,7 +106,7 @@ class ModelPredictiveControl:
 		
 		cost_dist = (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - self.config_matrix[0][1]) ** 2 + (np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2) - self.config_matrix[0][2]) ** 2 + (np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2) - self.config_matrix[0][3]) ** 2
 		cost_psi = (psi - states_psi1) ** 2
-		cost_ = 100 * lamda_1 + 100 * lamda_2 + 50 * cost_dist + 2 * cost_psi + 10 * self.job * cost_xy 
+		cost_ = 500 * lamda_1 + 500 * lamda_2 + 100 * cost_dist + 2 * cost_psi + 10 * self.job * cost_xy 
 		
 		cost = np.sum(cost_) 
 
@@ -140,11 +140,21 @@ class ModelPredictiveControl:
 		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2 	
 		cost_psi = (psi - self.psi_terminal) ** 2
 
+		
+
+		dist_robot1 = np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2)
+		dist_robot2 = np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2)
+		dist_robot3 = np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2)
+		cost_robot_obs1 = (1 / dist_robot1) * ((0.1 + 0.25 - dist_robot1)/(abs(0.1 + 0.25 - dist_robot1)+0.000000000001) + 1)
+		cost_robot_obs2 = (1 / dist_robot2) * ((0.1 + 0.25 - dist_robot2)/(abs(0.1 + 0.25 - dist_robot2)+0.000000000001) + 1)
+		cost_robot_obs3 = (1 / dist_robot3) * ((0.1 + 0.25 - dist_robot3)/(abs(0.1 + 0.25 - dist_robot3)+0.000000000001) + 1)
+		cost_robot_obs = cost_robot_obs1 + cost_robot_obs2 + cost_robot_obs3
+
 		dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
 		cost_obs = ((self.r[0] + 0.1 + 0.25 - dist_obs)/(abs(self.r[0] + 0.1 + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
 		cost_obs = np.sum(cost_obs, axis=0)
-		
-		cost_ = 200 * lamda_1 + 200 * lamda_2 + 10 * cost_xy + 0.02 * cost_psi + 1.5 * cost_obs
+
+		cost_ = 500 * lamda_1 + 500 * lamda_2 + 10 * cost_xy + 0.02 * cost_psi + 3.5 * cost_robot_obs + 3.5 * cost_obs
 		cost = np.sum(cost_) 
 
 		return cost
@@ -220,11 +230,11 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(-4.5, 2, 3*np.pi/4, 2.84, 0.22)
+	myRobot = ModelPredictiveControl(0.27, 0.56, 3*np.pi/4, 2.84, 0.22)
 	u = np.zeros(2*myRobot.horizon)
 	
 	iter = 0
-	mode = "solo"
+	mode = "multi"
 	while not rospy.is_shutdown():
 		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
 		res_x = abs(state[0]- myRobot.goal[0])
@@ -236,16 +246,15 @@ if __name__ == '__main__':
 			myRobot.pre_states.y = np.full(myRobot.horizon, state[1])
 			myRobot.pre_states.psi = np.full(myRobot.horizon, state[2])
 			myRobot.pub2.publish(myRobot.pre_states)
-		if (rx1 and rx2 and rx3) or mode == "solo":
+		if (rx1 and rx2 and rx3):# or mode == "solo":
 			rx0 = 0.0				
 			
 			u = myRobot.optimize(state, u, mode)
 			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
 			iter += 1
-
+			
 			if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
 				print("Mean optimization Time: ", myRobot.te/myRobot.loop)
-			#	pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
-			#	break				
+
 		rate.sleep()
 	rospy.spin()
