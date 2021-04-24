@@ -16,8 +16,8 @@
         <pose frame=''>0 0 0 0 -0 0</pose>
       </inertial>
       <gravity>1</gravity>
-      <self_collide>0</self_collide>
-      <kinematic>0</kinematic>
+      <self_collide>1</self_collide>
+      <kinematic>1</kinematic>
       <visual name='visual'>
         <pose frame=''>0 0 0 0 -0 0</pose>
         <geometry>

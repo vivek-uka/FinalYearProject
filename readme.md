@@ -1,5 +1,5 @@
 ### Multi Robot MPC  
-Prerequisite Package: [Turtlebot3](https://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/)
+Prerequisite Package: [Volta](https://github.com/botsync/volta)
 
 #### Building the code    
 Change gazebo model path by adding this line in ~/.bashrc  
