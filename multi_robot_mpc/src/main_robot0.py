@@ -42,11 +42,13 @@ class ModelPredictiveControl:
 		self.goal = [x_g, y_g]	
 		self.pre_states = States()
 		self.psi_terminal = psi_g
-		self.pub2 = rospy.Publisher('tb3_0/pre_state', States, queue_size=10)
+		self.pub2 = rospy.Publisher('volta_0/pre_state', States, queue_size=10)
 		self.stop = 1
 		self.job = 0 # follower = 0 leader = 1
 		self.te = 0.0
 		self.loop = 0.0
+		self.v_optimal = 0.0
+		self.psidot_optimal = 0.0
 		self.obsx = [-1.7, -0.36, -1.7, -1, -0.36]#[-6, -6, -5, -5, -5.5] 
 		self.obsy = [-1.5, -0.36, -0.36, -0.8, -1.5]#[0.5, 1.5, 1.5, 0.5, 1]
 		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
@@ -137,24 +139,26 @@ class ModelPredictiveControl:
 
 		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
-		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2 	
+		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2
+		cost_xy_terminal = (rn[-1] - self.goal[0]) ** 2 + (re[-1] - self.goal[1]) ** 2 	
+		cost_smoothness_a = (np.hstack((u[0] - self.v_optimal, np.diff(u[0:self.horizon])))/self.dt) ** 2
+		cost_smoothness_w = (np.hstack((u[self.horizon] - self.psidot_optimal, np.diff(u[self.horizon:])))/self.dt)**2
 		cost_psi = (psi - self.psi_terminal) ** 2
-
 		
 
-		dist_robot1 = np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2)
-		dist_robot2 = np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2)
-		dist_robot3 = np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2)
-		cost_robot_obs1 = (1 / dist_robot1) * ((0.1 + 0.25 - dist_robot1)/(abs(0.1 + 0.25 - dist_robot1)+0.000000000001) + 1)
-		cost_robot_obs2 = (1 / dist_robot2) * ((0.1 + 0.25 - dist_robot2)/(abs(0.1 + 0.25 - dist_robot2)+0.000000000001) + 1)
-		cost_robot_obs3 = (1 / dist_robot3) * ((0.1 + 0.25 - dist_robot3)/(abs(0.1 + 0.25 - dist_robot3)+0.000000000001) + 1)
-		cost_robot_obs = cost_robot_obs1 + cost_robot_obs2 + cost_robot_obs3
+		# dist_robot1 = np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2)
+		# dist_robot2 = np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2)
+		# dist_robot3 = np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2)
+		# cost_robot_obs1 = (1 / dist_robot1) * ((0.1 + 0.25 - dist_robot1)/(abs(0.1 + 0.25 - dist_robot1)+0.000000000001) + 1)
+		# cost_robot_obs2 = (1 / dist_robot2) * ((0.1 + 0.25 - dist_robot2)/(abs(0.1 + 0.25 - dist_robot2)+0.000000000001) + 1)
+		# cost_robot_obs3 = (1 / dist_robot3) * ((0.1 + 0.25 - dist_robot3)/(abs(0.1 + 0.25 - dist_robot3)+0.000000000001) + 1)
+		# cost_robot_obs = cost_robot_obs1 + cost_robot_obs2 + cost_robot_obs3
 
-		dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
-		cost_obs = ((self.r[0] + 0.1 + 0.25 - dist_obs)/(abs(self.r[0] + 0.1 + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
-		cost_obs = np.sum(cost_obs, axis=0)
+		# dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
+		# cost_obs = ((self.r[0] + 0.1 + 0.25 - dist_obs)/(abs(self.r[0] + 0.1 + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
+		# cost_obs = np.sum(cost_obs, axis=0)
 
-		cost_ = 500 * lamda_1 + 500 * lamda_2 + 10 * cost_xy + 0.02 * cost_psi + 3.5 * cost_robot_obs + 3.5 * cost_obs
+		cost_ = 500 * lamda_1 + 500 * lamda_2 + 10 * cost_xy + 250 * cost_xy_terminal + 2 * cost_psi + cost_smoothness_a + cost_smoothness_w# + 3.5 * cost_robot_obs + 3.5 * cost_obs
 		cost = np.sum(cost_) 
 
 		return cost
@@ -188,11 +192,11 @@ def statesCallback3(data):
 def odomCallback(data):
 	global rx0, state, v_optimal, psidot_optimal
 
-	x = data.pose.pose.position.x
-	y = data.pose.pose.position.y
+	y = data.pose.pose.position.x
+	x = -data.pose.pose.position.y
 
-	vx = data.twist.twist.linear.x
-	vy = data.twist.twist.linear.y
+	vy = data.twist.twist.linear.x
+	vx = -data.twist.twist.linear.y
 
 	wz = data.twist.twist.angular.z
 
@@ -204,6 +208,10 @@ def odomCallback(data):
 	siny_cosp = 2 * (qw * qz + qx * qy)
 	cosy_cosp = 1 - 2 * (qy * qy + qz * qz)
 	psi = np.arctan2(siny_cosp, cosy_cosp)
+
+	psi = np.pi/2 + psi
+	if psi > np.pi:
+		psi = psi - 2 * np.pi
 
 	state[0] = x
 	state[1] = y
@@ -218,23 +226,23 @@ if __name__ == '__main__':
 	
 	freq = 10
 	rospy.init_node('my_robot0', anonymous='True')	
-	rospy.Subscriber('tb3_0/odom', Odometry, odomCallback)
+	rospy.Subscriber('volta_0/volta_base_controller/odom', Odometry, odomCallback)
 
-	rospy.Subscriber('tb3_1/pre_state', States, statesCallback1)
-	rospy.Subscriber('tb3_2/pre_state', States, statesCallback2)
-	rospy.Subscriber('tb3_3/pre_state', States, statesCallback3)
+	rospy.Subscriber('volta_1/pre_state', States, statesCallback1)
+	rospy.Subscriber('volta_2/pre_state', States, statesCallback2)
+	rospy.Subscriber('volta_3/pre_state', States, statesCallback3)
 	
 	
-	pub = rospy.Publisher('tb3_0/cmd_vel', Twist, queue_size=10)
+	pub = rospy.Publisher('volta_0/cmd_vel', Twist, queue_size=10)
 	
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(0.27, 0.56, 3*np.pi/4, 2.84, 0.22)
+	myRobot = ModelPredictiveControl(0.0, 5, 3*np.pi/4, 5, 1)
 	u = np.zeros(2*myRobot.horizon)
 	
 	iter = 0
-	mode = "multi"
+	mode = "solo"
 	while not rospy.is_shutdown():
 		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
 		res_x = abs(state[0]- myRobot.goal[0])
@@ -246,10 +254,12 @@ if __name__ == '__main__':
 			myRobot.pre_states.y = np.full(myRobot.horizon, state[1])
 			myRobot.pre_states.psi = np.full(myRobot.horizon, state[2])
 			myRobot.pub2.publish(myRobot.pre_states)
-		if (rx1 and rx2 and rx3):# or mode == "solo":
+		if (rx1 and rx2 and rx3 or mode == "solo"):
 			rx0 = 0.0				
 			
 			u = myRobot.optimize(state, u, mode)
+			myRobot.v_optimal = u[0]
+			myRobot.psidot_optimal = u[myRobot.horizon]
 			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
 			iter += 1
 			

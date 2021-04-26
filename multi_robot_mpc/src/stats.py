@@ -31,7 +31,7 @@ states_y3 = []
 states_psi3 = []
 
 v0 = wz0 = v1 = wz1 = v2 = wz2 = v3 = wz3 = 0.0
-goal0 = [0.27, 0.56, 3*np.pi/4]
+goal0 = [0.0, 5, 3*np.pi/4]
 goal1 = [0.27, -2.2, 0]
 goal2= [-2.4, -2.2, -np.pi/4]
 goal3 = [-2.4, 0.56, -np.pi/4]
@@ -129,14 +129,14 @@ if __name__ == '__main__':
 	
 	freq = 100
 	rospy.init_node('my_stats', anonymous='True')	
-	rospy.Subscriber('tb3_0/pre_state', States, statesCallback0)
-	rospy.Subscriber('tb3_1/pre_state', States, statesCallback1)
-	rospy.Subscriber('tb3_2/pre_state', States, statesCallback2)
-	rospy.Subscriber('tb3_3/pre_state', States, statesCallback3)
-	rospy.Subscriber('tb3_0/odom', Odometry, odomCallback0)
-	rospy.Subscriber('tb3_1/odom', Odometry, odomCallback1)
-	rospy.Subscriber('tb3_2/odom', Odometry, odomCallback2)
-	rospy.Subscriber('tb3_3/odom', Odometry, odomCallback3)
+	rospy.Subscriber('volta_0/pre_state', States, statesCallback0)
+	rospy.Subscriber('volta_1/pre_state', States, statesCallback1)
+	rospy.Subscriber('volta_2/pre_state', States, statesCallback2)
+	rospy.Subscriber('volta_3/pre_state', States, statesCallback3)
+	rospy.Subscriber('volta_0/volta_base_controller/odom', Odometry, odomCallback0)
+	rospy.Subscriber('volta_1/volta_base_controller/odom', Odometry, odomCallback1)
+	rospy.Subscriber('volta_2/volta_base_controller/odom', Odometry, odomCallback2)
+	rospy.Subscriber('volta_3/volta_base_controller/odom', Odometry, odomCallback3)
 
 
 	
@@ -191,17 +191,19 @@ if __name__ == '__main__':
 					 [2*l/np.sqrt(2), l/np.sqrt(2), 0, l/np.sqrt(2)], 
 					 [l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2), 0]]
 	while not rospy.is_shutdown():
-		"""if rx0 >= 5:
+		if rx0 >= 5:
 			iter += 1
-			dist_goal = np.sqrt((goal0[0] - x0) ** 2 + (goal0[1] - y0) ** 2)
+			dist_goal = np.sqrt((goal0[0] - state0[0]) ** 2 + (goal0[1] - state0[1]) ** 2)
 			simulation_time.append(iter * 1/freq)
-			simulation_v.append(v0)
-			simulation_psidot.append(wz0)
-			simulation_x_residue.append((abs(x0 - goal0[0])))
-			simulation_y_residue.append((abs(y0 - goal0[1])))
-			simulation_psi_residue.append((abs(psi0 - goal0[2])))
+			simulation_v0.append(v0)
+			simulation_psidot0.append(wz0)
+			simulation_x_residue0.append((abs(state0[0] - goal0[0])))
+			simulation_y_residue0.append((abs(state0[1] - goal0[1])))
+			simulation_psi_residue0.append((abs(state0[2] - goal0[2])))
 			
-			if simulation_x_residue[-1] < 0.01 and simulation_y_residue[-1] < 0.01 and simulation_psi_residue[-1] < 0.01:
+			if simulation_x_residue0[-1] < 0.01 and simulation_y_residue0[-1] < 0.01 and simulation_psi_residue0[-1] < 0.01:
+				break
+			if time() - t >= 20:
 				break
 			plt.clf()
 			ax1 = fig.add_subplot(1, 1, 1)
@@ -230,15 +232,16 @@ if __name__ == '__main__':
 			ax1.add_artist(circle9)
 				
 
-			plt.xlim(-7, -4)
-			plt.ylim(-0.0, 2.5)
-			plt.scatter(x0, y0, linewidths=0.05)
+			plt.xlim(-2.5, 2.5)
+			plt.ylim(-0.0, 7)
+			plt.scatter(state0[0], state0[1], linewidths=0.05)
 			plt.scatter(goal0[0], goal0[1], linewidths=0.05, color='green')
 			plt.plot(states_x0, states_y0, linestyle=':',color='red')
 			plt.title('Obstacle avoidance')
 			plt.draw()
-			plt.pause(0.000001)"""
-		if rx0 >= 5 and rx1 >= 5 and rx2 >= 5 and rx3 >= 5:
+			plt.pause(0.000001)
+
+		"""if rx0 >= 5 and rx1 >= 5 and rx2 >= 5 and rx3 >= 5:
 			plt.clf()
 			iter+=1
 			simulation_time.append(iter * 1/freq)
@@ -269,8 +272,7 @@ if __name__ == '__main__':
 			plt.ylim(-4, 6)
 			plt.draw()
 			plt.pause(0.000001)
-			
-			print(round(dist_01[-1], 3), round(dist_02[-1], 3), round(dist_03[-1], 3), round(dist_12[-1], 3), round(dist_13[-1], 3), round(dist_23[-1], 3))
+			print(round(dist_01[-1], 3), round(dist_02[-1], 3), round(dist_03[-1], 3), round(dist_12[-1], 3), round(dist_13[-1], 3), round(dist_23[-1], 3))"""
 		"""if rx0 >= 5 and rx1 >= 5 and rx2 >=5 and rx3 >=5:
 			plt.clf()
 			ax1 = fig.add_subplot(1, 1, 1)
@@ -358,11 +360,11 @@ if __name__ == '__main__':
 			plt.pause(0.001)"""
 
 		rate.sleep()
-	v_max = 0.22
-	psidot_max = 2.84
+	v_max = 1
+	psidot_max = 5
 
 	print(round(np.mean(dist_01), 3), round(np.mean(dist_02), 3), round(np.mean(dist_03), 3), round(np.mean(dist_12), 3), round(np.mean(dist_13), 3), round(np.mean(dist_23), 3))
-	plt.figure(5)
+	"""plt.figure(5)
 	plt.title('distance_error')
 	plt.plot(simulation_time, dist_01)
 	plt.plot(simulation_time, dist_02)
@@ -372,24 +374,25 @@ if __name__ == '__main__':
 	plt.plot(simulation_time, dist_23)
 	plt.legend(["dist_01", "dist_02", "dist_03", "dist_12", "dist_13", "dist_23"])
 	plt.show()
-	"""plt.figure(5)
+	"""
+	plt.figure(5)
 	plt.title('residue_goal')
 	plt.plot(simulation_time, simulation_x_residue0)
 	plt.plot(simulation_time, simulation_y_residue0)
-	plt.plot(simulation_time, simulation_x_residue1)
-	plt.plot(simulation_time, simulation_y_residue1)
-	plt.plot(simulation_time, simulation_x_residue2)
-	plt.plot(simulation_time, simulation_y_residue2)
-	plt.plot(simulation_time, simulation_x_residue3)
-	plt.plot(simulation_time, simulation_y_residue3)
+	# plt.plot(simulation_time, simulation_x_residue1)
+	# plt.plot(simulation_time, simulation_y_residue1)
+	# plt.plot(simulation_time, simulation_x_residue2)
+	# plt.plot(simulation_time, simulation_y_residue2)
+	# plt.plot(simulation_time, simulation_x_residue3)
+	# plt.plot(simulation_time, simulation_y_residue3)
 	plt.legend(["res_x0", "res_y0", "res_x1", "res_y1", "res_x2", "res_y2", "res_x3", "res_y3"], loc ="upper right")
 
 	plt.figure(2)
 	plt.title('v_controls')
 	plt.plot(simulation_time, simulation_v0)
-	plt.plot(simulation_time, simulation_v1)
-	plt.plot(simulation_time, simulation_v2)
-	plt.plot(simulation_time, simulation_v3)
+	# plt.plot(simulation_time, simulation_v1)
+	# plt.plot(simulation_time, simulation_v2)
+	# plt.plot(simulation_time, simulation_v3)
 	plt.plot([0, simulation_time[-1]], [v_max, v_max])
 	plt.plot([0, simulation_time[-1]], [-v_max, -v_max])
 	plt.legend(["linear_velocity", "max_bounds", "min_bounds"], loc ="upper right")
@@ -397,9 +400,9 @@ if __name__ == '__main__':
 	plt.figure(3)
 	plt.title('psidot_controls')
 	plt.plot(simulation_time, simulation_psidot0)
-	plt.plot(simulation_time, simulation_psidot1)
-	plt.plot(simulation_time, simulation_psidot2)
-	plt.plot(simulation_time, simulation_psidot3)
+	# plt.plot(simulation_time, simulation_psidot1)
+	# plt.plot(simulation_time, simulation_psidot2)
+	# plt.plot(simulation_time, simulation_psidot3)
 	plt.plot([0, simulation_time[-1]], [psidot_max, psidot_max])
 	plt.plot([0, simulation_time[-1]], [-psidot_max, -psidot_max])
 	plt.legend(["angular_velocity", "max_bounds", "min_bounds"], loc ="upper right")
@@ -407,10 +410,10 @@ if __name__ == '__main__':
 	plt.figure(4)
 	plt.title('res_psi')
 	plt.plot(simulation_time, simulation_psi_residue0)
-	plt.plot(simulation_time, simulation_psi_residue1)
-	plt.plot(simulation_time, simulation_psi_residue2)
-	plt.plot(simulation_time, simulation_psi_residue3)
-	plt.legend(["res_psi0", "res_psi1", "res_psi2", "res_psi3"], loc="upper right")"""
+	# plt.plot(simulation_time, simulation_psi_residue1)
+	# plt.plot(simulation_time, simulation_psi_residue2)
+	# plt.plot(simulation_time, simulation_psi_residue3)
+	plt.legend(["res_psi0", "res_psi1", "res_psi2", "res_psi3"], loc="upper right")
 
 	plt.show()
 	rospy.spin()

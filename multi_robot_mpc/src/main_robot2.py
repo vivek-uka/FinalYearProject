@@ -41,7 +41,7 @@ class ModelPredictiveControl:
 		self.goal = [x_g, y_g]	
 		self.pre_states = States()
 		self.psi_terminal = psi_g
-		self.pub2 = rospy.Publisher('tb3_2/pre_state', States, queue_size=10)
+		self.pub2 = rospy.Publisher('volta_2/pre_state', States, queue_size=10)
 		self.stop = 1
 		self.job = 0 # follower = 0 leader = 1
 		self.te = 0.0
@@ -208,13 +208,13 @@ if __name__ == '__main__':
 	
 	freq = 10
 	rospy.init_node('my_robot2', anonymous='True')	
-	rospy.Subscriber('tb3_2/odom', Odometry, odomCallback)
+	rospy.Subscriber('volta_2/volta_base_controller/odom', Odometry, odomCallback)
 
-	rospy.Subscriber('tb3_0/pre_state', States, statesCallback0)
-	rospy.Subscriber('tb3_1/pre_state', States, statesCallback1)
-	rospy.Subscriber('tb3_3/pre_state', States, statesCallback3)
+	rospy.Subscriber('volta_0/pre_state', States, statesCallback0)
+	rospy.Subscriber('volta_1/pre_state', States, statesCallback1)
+	rospy.Subscriber('volta_3/pre_state', States, statesCallback3)
 
-	pub = rospy.Publisher('tb3_2/cmd_vel', Twist, queue_size=10)
+	pub = rospy.Publisher('volta_2/cmd_vel', Twist, queue_size=10)
 	
 
 	rate = rospy.Rate(freq)
