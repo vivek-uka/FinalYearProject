@@ -4,8 +4,8 @@
     <arg name="third_volta"  default="volta_2"/>
     <arg name="fourth_volta"  default="volta_3"/>
 
-    <arg name="first_volta_x_pos" default="-0"/>
-    <arg name="first_volta_y_pos" default="-0"/>
+    <arg name="first_volta_x_pos" default="-4"/>
+    <arg name="first_volta_y_pos" default="-3"/>
     <arg name="first_volta_yaw"   default=" 1.57"/>
 
     <arg name="second_volta_x_pos" default=" -5.8"/>

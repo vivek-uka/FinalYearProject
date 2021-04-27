@@ -44,18 +44,18 @@
         <pose frame="">0 0 0 0 0 0</pose>
 		</model>-->
 
-        <!-- <model name="obs1">
+        <model name="obs1">
         <include>
             <uri>model://cube_o</uri>
         </include>
-        <pose frame="">-1.7 -1.5 1 0 0 0</pose>
-	    </model> -->
+        <pose frame="">-2.5 0.5 0 0 0 0</pose>
+	    </model>
 
         <model name="obs2">
         <include>
             <uri>model://cube_o</uri>
         </include>
-        <pose frame="">-0.36 -0.36 1 0 0 0</pose>
+        <pose frame="">0.34 0.51 0 0 0 0</pose>
         <!-- <pose frame="">-6 1.5 0 0 0 0</pose> -->
 	    </model>
         
@@ -63,7 +63,7 @@
         <include>
             <uri>model://cube_o</uri>
         </include>
-        <pose frame="">-1.7 -0.36 0 0 0 0</pose>
+        <pose frame="">0.34 -2.27 0 0 0 0</pose>
         <!-- <pose frame="">-5 1.5 0 0 0 0</pose> -->
 	    </model>
 
@@ -79,7 +79,7 @@
         <include>
             <uri>model://cube_o</uri>
         </include>
-        <pose frame="">-0.36 -1.5 0 0 0 0</pose>
+        <pose frame="">-2.4 -2.2 0 0 0 0</pose>
         <!-- <pose frame="">-5.5 1 0 0 0 0</pose> -->
 	    </model>
 

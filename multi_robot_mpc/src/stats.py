@@ -31,13 +31,13 @@ states_y3 = []
 states_psi3 = []
 
 v0 = wz0 = v1 = wz1 = v2 = wz2 = v3 = wz3 = 0.0
-goal0 = [0.0, 5, 3*np.pi/4]
+goal0 = [1, 1, 0]
 goal1 = [0.27, -2.2, 0]
 goal2= [-2.4, -2.2, -np.pi/4]
 goal3 = [-2.4, 0.56, -np.pi/4]
 
-obsx = [-1.7, -0.36, -1.7, -1, -0.36] #[-6, -6, -5, -5, -5.5] 
-obsy = [-1.5, -0.36, -0.36, -0.8, -1.5] #[0.5, 1.5, 1.5, 0.5, 1]
+obsx = [-2.5, 0.34, 0.34, -1, -2.4]#[-1.7, -0.36, -1.7, -1, -0.36] #[-6, -6, -5, -5, -5.5] 
+obsy = [0.5, 0.51, -2.27, -0.8, -2.2]#[-1.5, -0.36, -0.36, -0.8, -1.5] #[0.5, 1.5, 1.5, 0.5, 1]
 
 def statesCallback0(data):
 	global states_x0, states_y0, states_psi0, rx0, state0
@@ -200,40 +200,41 @@ if __name__ == '__main__':
 			simulation_x_residue0.append((abs(state0[0] - goal0[0])))
 			simulation_y_residue0.append((abs(state0[1] - goal0[1])))
 			simulation_psi_residue0.append((abs(state0[2] - goal0[2])))
-			
+			# print(round(simulation_psi_residue0[-1], 2), round(simulation_x_residue0[-1], 2), round(simulation_y_residue0[-1], 2))
 			if simulation_x_residue0[-1] < 0.01 and simulation_y_residue0[-1] < 0.01 and simulation_psi_residue0[-1] < 0.01:
 				break
-			if time() - t >= 20:
+			if time() - t >= 50:
 				break
 			plt.clf()
 			ax1 = fig.add_subplot(1, 1, 1)
 			ax1.set_aspect(1)
 			
-			circle0 = (plt.Circle((obsx[0], obsy[0]), 0.2+0.1, color='orange', fill=False))
-			circle1 = (plt.Circle((obsx[1], obsy[1]), 0.2+0.1, color='orange', fill=False))
-			circle2 = (plt.Circle((obsx[2], obsy[2]), 0.2+0.1, color='orange', fill=False))
-			circle3 = (plt.Circle((obsx[3], obsy[3]), 0.2+0.1, color='orange', fill=False))
-			circle4 = (plt.Circle((obsx[4], obsy[4]), 0.2+0.1, color='orange', fill=False))
-			circle5 = (plt.Circle((obsx[0], obsy[0]), 0.2, color='orange'))
-			circle6 = (plt.Circle((obsx[1], obsy[1]), 0.2, color='orange'))
-			circle7 = (plt.Circle((obsx[2], obsy[2]), 0.2, color='orange'))
-			circle8 = (plt.Circle((obsx[3], obsy[3]), 0.2, color='orange'))
-			circle9 = (plt.Circle((obsx[4], obsy[4]), 0.2, color='orange'))
+			r = 0.2 * np.sqrt(2)/ 2+0.35
+			circle0 = (plt.Circle((obsx[0], obsy[0]), r, color='orange', fill=False))
+			circle1 = (plt.Circle((obsx[1], obsy[1]), r, color='orange', fill=False))
+			circle2 = (plt.Circle((obsx[2], obsy[2]), r, color='orange', fill=False))
+			circle3 = (plt.Circle((obsx[3], obsy[3]), r, color='orange', fill=False))
+			circle4 = (plt.Circle((obsx[4], obsy[4]), r, color='orange', fill=False))
+			# circle5 = (plt.Circle((obsx[0], obsy[0]), 0.2, color='orange'))
+			# circle6 = (plt.Circle((obsx[1], obsy[1]), 0.2, color='orange'))
+			# circle7 = (plt.Circle((obsx[2], obsy[2]), 0.2, color='orange'))
+			# circle8 = (plt.Circle((obsx[3], obsy[3]), 0.2, color='orange'))
+			# circle9 = (plt.Circle((obsx[4], obsy[4]), 0.2, color='orange'))
 
 			ax1.add_artist(circle0)
 			ax1.add_artist(circle1)
 			ax1.add_artist(circle2)
 			ax1.add_artist(circle3)
 			ax1.add_artist(circle4)
-			ax1.add_artist(circle5)
-			ax1.add_artist(circle6)
-			ax1.add_artist(circle7)
-			ax1.add_artist(circle8)
-			ax1.add_artist(circle9)
+			# ax1.add_artist(circle5)
+			# ax1.add_artist(circle6)
+			# ax1.add_artist(circle7)
+			# ax1.add_artist(circle8)
+			# ax1.add_artist(circle9)
 				
 
-			plt.xlim(-2.5, 2.5)
-			plt.ylim(-0.0, 7)
+			plt.xlim(-4, 4)
+			plt.ylim(-4, 2)
 			plt.scatter(state0[0], state0[1], linewidths=0.05)
 			plt.scatter(goal0[0], goal0[1], linewidths=0.05, color='green')
 			plt.plot(states_x0, states_y0, linestyle=':',color='red')
@@ -363,7 +364,7 @@ if __name__ == '__main__':
 	v_max = 1
 	psidot_max = 5
 
-	print(round(np.mean(dist_01), 3), round(np.mean(dist_02), 3), round(np.mean(dist_03), 3), round(np.mean(dist_12), 3), round(np.mean(dist_13), 3), round(np.mean(dist_23), 3))
+	# print(round(np.mean(dist_01), 3), round(np.mean(dist_02), 3), round(np.mean(dist_03), 3), round(np.mean(dist_12), 3), round(np.mean(dist_13), 3), round(np.mean(dist_23), 3))
 	"""plt.figure(5)
 	plt.title('distance_error')
 	plt.plot(simulation_time, dist_01)
@@ -388,7 +389,7 @@ if __name__ == '__main__':
 	plt.legend(["res_x0", "res_y0", "res_x1", "res_y1", "res_x2", "res_y2", "res_x3", "res_y3"], loc ="upper right")
 
 	plt.figure(2)
-	plt.title('v_controls')
+	plt.title('v')
 	plt.plot(simulation_time, simulation_v0)
 	# plt.plot(simulation_time, simulation_v1)
 	# plt.plot(simulation_time, simulation_v2)
@@ -398,7 +399,7 @@ if __name__ == '__main__':
 	plt.legend(["linear_velocity", "max_bounds", "min_bounds"], loc ="upper right")
 
 	plt.figure(3)
-	plt.title('psidot_controls')
+	plt.title('psidot')
 	plt.plot(simulation_time, simulation_psidot0)
 	# plt.plot(simulation_time, simulation_psidot1)
 	# plt.plot(simulation_time, simulation_psidot2)
@@ -414,7 +415,7 @@ if __name__ == '__main__':
 	# plt.plot(simulation_time, simulation_psi_residue2)
 	# plt.plot(simulation_time, simulation_psi_residue3)
 	plt.legend(["res_psi0", "res_psi1", "res_psi2", "res_psi3"], loc="upper right")
-
+	
 	plt.show()
 	rospy.spin()
 

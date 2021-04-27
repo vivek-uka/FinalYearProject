@@ -1,0 +1,2 @@
+Optimization Time: 0.19s
+(0,0,pi/2) (-2, 5, -pi/4)
