@@ -10,7 +10,6 @@ project(multi_robot_mpc)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
-  turtlebot3_gazebo
   message_generation
 )
 
@@ -105,7 +104,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES multi-robot-mpc
-   CATKIN_DEPENDS roscpp rospy turtlebot3_gazebo message_runtime
+   CATKIN_DEPENDS roscpp rospy message_runtime
 #  DEPENDS system_lib
 )
 

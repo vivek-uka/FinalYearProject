@@ -77,7 +77,7 @@ class ModelPredictiveControl:
 		self.pub2.publish(self.pre_states)
 		self.te += time() - startTime
 		self.loop += 1
-		
+		print(self.te/self.loop)
 		return u
 
 	def cost_maintain_config(self, u, state): 
@@ -141,6 +141,8 @@ class ModelPredictiveControl:
 
 		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
+		lamda_3 = np.maximum(np.zeros(self.horizon), 1 - (((rn + 6.5)/2.22) ** 10 + ((re + 3)/5.86) ** 10))
+		lamda_4 = np.maximum(np.zeros(self.horizon), 1 - (((rn + 6.5)/2.22) ** 10 + ((re - 10)/2.5) ** 10))
 		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2
 		#cost_xy_terminal = (rn[-1] - self.goal[0]) ** 2 + (re[-1] - self.goal[1]) ** 2 	
 		cost_smoothness_a = (np.hstack((u[0] - self.v_optimal, np.diff(u[0:self.horizon])))/self.dt) ** 2
@@ -156,11 +158,13 @@ class ModelPredictiveControl:
 		# cost_robot_obs3 = (1 / dist_robot3) * ((0.1 + 0.25 - dist_robot3)/(abs(0.1 + 0.25 - dist_robot3)+0.000000000001) + 1)
 		# cost_robot_obs = cost_robot_obs1 + cost_robot_obs2 + cost_robot_obs3
 
-		dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
-		cost_obs = ((self.r[0] + 0.35 + 0.25 - dist_obs)/(abs(self.r[0] + 0.35 + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
-		cost_obs = np.sum(cost_obs, axis=0)
+		# dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
+		# cost_obs = ((self.r[0] + 0.35 + 0.25 - dist_obs)/(abs(self.r[0] + 0.35 + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
+		# cost_obs = np.sum(cost_obs, axis=0)
 
-		cost_ = 700 * lamda_1 + 700 * lamda_2 + 10 * cost_xy + 50 * cost_xy[-1] + 2 * cost_psi[-1] + cost_smoothness_a + cost_smoothness_w + 105 * cost_obs# + 3.5 * cost_robot_obs 
+		lamda_3 = np.sum(lamda_3, axis=0)
+		lamda_4 = np.sum(lamda_4, axis=0)
+		cost_ = 700 * lamda_1 + 700 * lamda_2 + 10 * cost_xy + 50 * cost_xy[-1] + 0 * cost_psi[-1] + cost_smoothness_a + cost_smoothness_w + 500 * (lamda_3+lamda_4) #+ 125 * cost_obs# + 3.5 * cost_robot_obs 
 		cost = np.sum(cost_) 
 
 		return cost
@@ -238,7 +242,7 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(1, 1, 0, 5, 1)
+	myRobot = ModelPredictiveControl(-8, 8, 0, 5, 1)
 	u = np.zeros(2*myRobot.horizon)
 	u_psidot = []
 	u_v = []

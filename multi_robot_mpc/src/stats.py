@@ -149,6 +149,11 @@ if __name__ == '__main__':
 	dist_13 = []
 	dist_23 = []
 	
+	dist_obs0 = []
+	dist_obs1 = []
+	dist_obs2 = []
+	dist_obs3 = []
+	dist_obs4 = []
 
 	simulation_time = []
 	simulation_v0 = []
@@ -193,6 +198,7 @@ if __name__ == '__main__':
 	while not rospy.is_shutdown():
 		if rx0 >= 5:
 			iter += 1
+			r = 0.2 * np.sqrt(2)/ 2+0.32
 			dist_goal = np.sqrt((goal0[0] - state0[0]) ** 2 + (goal0[1] - state0[1]) ** 2)
 			simulation_time.append(iter * 1/freq)
 			simulation_v0.append(v0)
@@ -200,6 +206,11 @@ if __name__ == '__main__':
 			simulation_x_residue0.append((abs(state0[0] - goal0[0])))
 			simulation_y_residue0.append((abs(state0[1] - goal0[1])))
 			simulation_psi_residue0.append((abs(state0[2] - goal0[2])))
+			dist_obs0.append(np.sqrt((state0[0] - obsx[0]) ** 2 + (state0[1] - obsy[0]) ** 2) - r)
+			dist_obs1.append(np.sqrt((state0[0] - obsx[1]) ** 2 + (state0[1] - obsy[1]) ** 2) - r)
+			dist_obs2.append(np.sqrt((state0[0] - obsx[2]) ** 2 + (state0[1] - obsy[2]) ** 2) - r)
+			dist_obs3.append(np.sqrt((state0[0] - obsx[3]) ** 2 + (state0[1] - obsy[3]) ** 2) - r)
+			dist_obs4.append(np.sqrt((state0[0] - obsx[4]) ** 2 + (state0[1] - obsy[4]) ** 2) - r)
 			# print(round(simulation_psi_residue0[-1], 2), round(simulation_x_residue0[-1], 2), round(simulation_y_residue0[-1], 2))
 			if simulation_x_residue0[-1] < 0.01 and simulation_y_residue0[-1] < 0.01 and simulation_psi_residue0[-1] < 0.01:
 				break
@@ -209,12 +220,17 @@ if __name__ == '__main__':
 			ax1 = fig.add_subplot(1, 1, 1)
 			ax1.set_aspect(1)
 			
-			r = 0.2 * np.sqrt(2)/ 2+0.35
+			trajx0.append(state0[0])
+			trajy0.append(state0[1])
+			plt.plot(trajx0, trajy0, color='black')
 			circle0 = (plt.Circle((obsx[0], obsy[0]), r, color='orange', fill=False))
 			circle1 = (plt.Circle((obsx[1], obsy[1]), r, color='orange', fill=False))
 			circle2 = (plt.Circle((obsx[2], obsy[2]), r, color='orange', fill=False))
 			circle3 = (plt.Circle((obsx[3], obsy[3]), r, color='orange', fill=False))
 			circle4 = (plt.Circle((obsx[4], obsy[4]), r, color='orange', fill=False))
+			
+			
+
 			# circle5 = (plt.Circle((obsx[0], obsy[0]), 0.2, color='orange'))
 			# circle6 = (plt.Circle((obsx[1], obsy[1]), 0.2, color='orange'))
 			# circle7 = (plt.Circle((obsx[2], obsy[2]), 0.2, color='orange'))
@@ -232,9 +248,12 @@ if __name__ == '__main__':
 			# ax1.add_artist(circle8)
 			# ax1.add_artist(circle9)
 				
-
-			plt.xlim(-4, 4)
-			plt.ylim(-4, 2)
+			plt.plot([-7.6, -7.6], [-100, 100])
+			plt.plot([-5.4, -5.4], [-100, 100])
+			plt.plot([-100, 100], [7.5, 7.5])
+			plt.plot([-100, 100], [2.7, 2.7])
+			plt.xlim(-10, 0)
+			plt.ylim(-4, 10)
 			plt.scatter(state0[0], state0[1], linewidths=0.05)
 			plt.scatter(goal0[0], goal0[1], linewidths=0.05, color='green')
 			plt.plot(states_x0, states_y0, linestyle=':',color='red')
@@ -415,7 +434,16 @@ if __name__ == '__main__':
 	# plt.plot(simulation_time, simulation_psi_residue2)
 	# plt.plot(simulation_time, simulation_psi_residue3)
 	plt.legend(["res_psi0", "res_psi1", "res_psi2", "res_psi3"], loc="upper right")
-	
+
+	plt.figure(9)
+	plt.title('Dist to Obstacles')
+	plt.plot(simulation_time, dist_obs0)
+	plt.plot(simulation_time, dist_obs1)
+	plt.plot(simulation_time, dist_obs2)
+	plt.plot(simulation_time, dist_obs3)
+	plt.plot(simulation_time, dist_obs4)
+	plt.plot([0, simulation_time[-1]], [0, 0])
+	plt.legend(["dist_obs0", "dist_obs1", "dist_obs2", "dist_obs3", "dist_obs4"])	
 	plt.show()
 	rospy.spin()
 

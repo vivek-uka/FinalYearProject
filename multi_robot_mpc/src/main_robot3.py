@@ -45,6 +45,8 @@ class ModelPredictiveControl:
 		self.stop = 1
 		self.te = 0.0
 		self.loop = 0.0
+		self.v_optimal = 0.0
+		self.psidot_optimal = 0.0
 		self.job = 0 # follower = 0 leader = 1
 		self.obsx = [-1.7, -0.36, -1.7, -1, -0.36]#[-6, -6, -5, -5, -5.5] 
 		self.obsy = [-1.5, -0.36, -0.36, -0.8, -1.5]#[0.5, 1.5, 1.5, 0.5, 1]
@@ -117,7 +119,7 @@ class ModelPredictiveControl:
 		for i in range(1, self.horizon):
 			psi.append(psi[i-1] + u[self.horizon + i] * self.dt)
 			rn.append(rn[i-1] + u[i] * np.cos(psi[i]) * self.dt)
-			re.append(re[i-1] + u[i] * np.sin(psi[i]) * self.dt)
+			re.append(re[i-1] + u[i] * np.sin(psi[i]) * self.dt)	
 		rn = np.array(rn)
 		re = np.array(re)
 		psi = np.array(psi)
@@ -131,22 +133,24 @@ class ModelPredictiveControl:
 
 		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
-		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2 	
+		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2
+		cost_smoothness_a = (np.hstack((u[0] - self.v_optimal, np.diff(u[0:self.horizon])))/self.dt) ** 2
+		cost_smoothness_w = (np.hstack((u[self.horizon] - self.psidot_optimal, np.diff(u[self.horizon:])))/self.dt)**2
 		cost_psi = (psi - self.psi_terminal) ** 2
-
-		dist_robot0 = np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2)
-		dist_robot2 = np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2)
-		dist_robot1 = np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2)
-		cost_robot_obs0 = (1 / dist_robot0) * ((0.1 + 0.25 - dist_robot0)/(abs(0.1 + 0.25 - dist_robot0)+0.000000000001) + 1)
-		cost_robot_obs2 = (1 / dist_robot2) * ((0.1 + 0.25 - dist_robot2)/(abs(0.1 + 0.25 - dist_robot2)+0.000000000001) + 1)
-		cost_robot_obs1 = (1 / dist_robot1) * ((0.1 + 0.25 - dist_robot1)/(abs(0.1 + 0.25 - dist_robot1)+0.000000000001) + 1)
-		cost_robot_obs = cost_robot_obs0 + cost_robot_obs2 + cost_robot_obs1
+		
+		# dist_robot1 = np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2)
+		# dist_robot2 = np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2)
+		# dist_robot3 = np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2)
+		# cost_robot_obs1 = (1 / dist_robot1) * ((0.1 + 0.25 - dist_robot1)/(abs(0.1 + 0.25 - dist_robot1)+0.000000000001) + 1)
+		# cost_robot_obs2 = (1 / dist_robot2) * ((0.1 + 0.25 - dist_robot2)/(abs(0.1 + 0.25 - dist_robot2)+0.000000000001) + 1)
+		# cost_robot_obs3 = (1 / dist_robot3) * ((0.1 + 0.25 - dist_robot3)/(abs(0.1 + 0.25 - dist_robot3)+0.000000000001) + 1)
+		# cost_robot_obs = cost_robot_obs1 + cost_robot_obs2 + cost_robot_obs3
 
 		dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
-		cost_obs = ((self.r[0] + 0.1 + 0.25 - dist_obs)/(abs(self.r[0] + 0.1 + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
+		cost_obs = ((self.r[0] + 0.35 + 0.25 - dist_obs)/(abs(self.r[0] + 0.35 + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
 		cost_obs = np.sum(cost_obs, axis=0)
-		
-		cost_ = 500 * lamda_1 + 500 * lamda_2 + 10 * cost_xy + 0.02 * cost_psi + 3.5 * cost_robot_obs + 3.5 * cost_obs
+
+		cost_ = 700 * lamda_1 + 700 * lamda_2 + 10 * cost_xy + 50 * cost_xy[-1] + 2 * cost_psi[-1] + cost_smoothness_a + cost_smoothness_w + 105 * cost_obs# + 3.5 * cost_robot_obs 
 		cost = np.sum(cost_) 
 
 		return cost	
@@ -235,7 +239,9 @@ if __name__ == '__main__':
 
 		if (rx1 and rx0 and rx2):# or mode == "solo":
 			rx3 = 0.0				
-			u = myRobot.optimize(state, u, mode)				
+			u = myRobot.optimize(state, u, mode)		
+			myRobot.v_optimal = u[0]
+			myRobot.psidot_optimal = u[myRobot.horizon]		
 			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
 
 		if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
