@@ -4,20 +4,20 @@
     <arg name="third_volta"  default="volta_2"/>
     <arg name="fourth_volta"  default="volta_3"/>
 
-    <arg name="first_volta_x_pos" default="-4"/>
-    <arg name="first_volta_y_pos" default="-3"/>
+    <arg name="first_volta_x_pos" default="1.2"/>
+    <arg name="first_volta_y_pos" default="7.7"/>
     <arg name="first_volta_yaw"   default=" 1.57"/>
 
-    <arg name="second_volta_x_pos" default=" -5.8"/>
-    <arg name="second_volta_y_pos" default=" -2.5"/>
+    <arg name="second_volta_x_pos" default=" 1.7"/>
+    <arg name="second_volta_y_pos" default=" -4"/>
     <arg name="second_volta_yaw"   default=" 1.57"/>
 
-    <arg name="third_volta_x_pos" default=" -5.5"/>
-    <arg name="third_volta_y_pos" default=" -3.0"/>
+    <arg name="third_volta_x_pos" default=" 1.7"/>
+    <arg name="third_volta_y_pos" default=" 1.2"/>
     <arg name="third_volta_yaw"   default=" 1.57"/>
 
-    <arg name="fourth_volta_x_pos" default=" -6.2"/>
-    <arg name="fourth_volta_y_pos" default=" -3.5"/>
+    <arg name="fourth_volta_x_pos" default=" -4"/>
+    <arg name="fourth_volta_y_pos" default=" 1.2"/>
     <arg name="fourth_volta_yaw"   default=" 1.57"/>
 
      
@@ -34,8 +34,8 @@
     <include file="$(find volta_localization)/launch/localization.launch" />
     <node name="robot_pose_publisher" pkg="robot_pose_publisher" type="robot_pose_publisher" respawn="true"/>
     </group>
-    <!-- 
-    <group ns = "$(arg second_volta)">
+    
+    <!-- <group ns = "$(arg second_volta)">
     <arg name="model" default="$(find volta_description)/urdf/volta.xacro"/>
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
