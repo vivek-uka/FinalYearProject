@@ -7,18 +7,20 @@ pre_x = []
 pre_y = []
 pre_psi = []
 
-horizon = 10
-u = np.zeros(2*horizon)
+
+horizon = 35 # 10, 20, 25, 35, 50, 75, 100
+dt = 0.5  
 state = [0, 0, 0]
+goal = [1, 1]
+psi_terminal = 0
+
+u = np.zeros(2*horizon)
 v_optimal = 0
 psidot_optimal = 0
-dt = 0.5  
+
 
 def cost_func (u):#, state, v_optimal, psidot_optimal, horizon,dt):
     global pre_x, pre_y, pre_psi
-
-    goal = [1, 1]
-    psi_terminal = 0
 
     obsx = [-2.5, 0.34, 0.34, -1, -2.4]#[-6, -6, -5, -5, -5.5] 
     obsy = [0.5, 0.51, -2.27, -0.8, -2.2]#[0.5, 1.5, 1.5, 0.5, 1]
@@ -43,11 +45,11 @@ def cost_func (u):#, state, v_optimal, psidot_optimal, horizon,dt):
     cost_smoothness_w = (np.hstack((u[horizon] - psidot_optimal, np.diff(u[horizon:])))/dt)**2
     cost_psi = (psi - psi_terminal) ** 2
     
-    dist_obs = np.array([np.sqrt((rn - np.array(obsx[i])) ** 2 + (re - np.array(obsy[i])) ** 2) for i in range(len(obsx))], dtype=float)
-    cost_obs = ((r[0] + rr + 0.25 - dist_obs)/(abs(r[0] + rr + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
-    cost_obs = np.sum(cost_obs, axis=0)
+    # dist_obs = np.array([np.sqrt((rn - np.array(obsx[i])) ** 2 + (re - np.array(obsy[i])) ** 2) for i in range(len(obsx))], dtype=float)
+    # cost_obs = ((r[0] + rr + 0.25 - dist_obs)/(abs(r[0] + rr + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
+    # cost_obs = np.sum(cost_obs, axis=0)
 
-    cost = (50 * cost_xy) + (100 * cost_xy[-1]) + 50*(cost_smoothness_w) + 50*(cost_smoothness_a) + (2 * cost_psi[-1]) + 50 * cost_obs
+    cost = (50 * cost_xy) + (100 * cost_xy[-1]) + 50*(cost_smoothness_w) + 50*(cost_smoothness_a) + (2 * cost_psi[-1]) #+ 50 * cost_obs
     cost = np.sum(cost)
 
     pre_x = rn
@@ -70,12 +72,21 @@ for i in range(horizon):
 bnds = tuple(bnds)    
 
 t = time()
-for i in range(1):
-    sol = minimize(cost_func, u, method = 'SLSQP', bounds = bnds)#, constraints = const)
-    # print(sol.x)
+sol = minimize(cost_func, u, method = 'SLSQP', bounds = bnds)#, constraints = const)
+
+print("SCIPY")
 print(time() - t)
 print(np.linalg.norm(sol.x[0:horizon]))
 print(np.linalg.norm(sol.x[horizon:]))
+print(np.sqrt((pre_x[-1] - goal[0]) ** 2 + (pre_y[-1] - goal[1]) ** 2))
+# sol.x[0:horizon] ---> v
+# sol.x[horizon:] ---> psidot
+	
+# norm of linear acceleration //np.linalg.norm(arr)
+# norm of angular acceleration
+# final position cost dist to goal (pre_x[-1])
+# computation time
+
 plt.figure(1)
 plt.xlim(-1, 5)
 plt.ylim(-1, 5)
