@@ -9,8 +9,8 @@ from multi_robot_mpc.msg import States
 import matplotlib.pyplot as plt
 
 
-state = [-2.5, -2.1, 1.57]
-init = [1.2, 7.7, 1.57]
+state = [2.5, -2.1, 1.57]
+init = [2.1, -6.6, 1.57]
 states_x1 = []
 states_y1 = []
 states_psi1 = []
@@ -35,7 +35,7 @@ class ModelPredictiveControl:
 
 	def __init__(self, x_g, y_g, psi_g, angular_max, linear_max):
 
-		self.horizon = 10
+		self.horizon = 5
 		self.control = 1
 		self.dt = 0.5
 		self.psidot_max = angular_max
@@ -54,15 +54,15 @@ class ModelPredictiveControl:
 		self.obsy = [0.5, 0.51, -2.27, -0.8, -2.2]#[0.5, 1.5, 1.5, 0.5, 1]
 		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
 		self.rr = 0.35
-		self.shelfx = [4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08]
-		self.shelfy = [-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7]
-		self.shelfa = [3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9]
- 		self.shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87] 
+		self.shelfx = [4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08, -5.79]
+		self.shelfy = [-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7, -0.95]
+		self.shelfa = [3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42]
+ 		self.shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18] 
 		
 		l = 1 #square config
 		self.config_matrix = [[0, l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2)], [l/np.sqrt(2), 0, l/np.sqrt(2), 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l/np.sqrt(2), 0, l/np.sqrt(2)], [l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2), 0]]
 
-	def optimize(self, state, u, mode,steps=25, lr=0.001, decay=0.9, eps=1e-8):
+	def optimize(self, state, u, mode,steps=25, lr=0.005, decay=0.9, eps=1e-8):
 
 		dx_mean_sqr = np.zeros(self.horizon*2)
 
@@ -149,8 +149,7 @@ class ModelPredictiveControl:
 		
 		lamda_shelf = np.sum(lamda_shelf, axis = 0)
 		
-		cost_x = (rn - self.goal[0]) ** 2 
-		cost_y = (re - self.goal[1]) ** 2
+		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2
 		cost_smoothness_a = (np.hstack((u[0] - self.v_optimal, np.diff(u[0:self.horizon])))/self.dt) ** 2
 		cost_smoothness_w = (np.hstack((u[self.horizon] - self.psidot_optimal, np.diff(u[self.horizon:])))/self.dt)**2
 		cost_psi = (psi - self.psi_terminal) ** 2
@@ -167,7 +166,7 @@ class ModelPredictiveControl:
 		# cost_obs = ((self.r[0] + self.rr + 0.25 - dist_obs)/(abs(self.r[0] + self.rr + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
 		# cost_obs = np.sum(cost_obs, axis=0)
 
-		cost_ = 200 * lamda_1 + 50 * lamda_2 + 5000000000 * (lamda_shelf) + 100 * cost_x + 200 * cost_y + 500 * (cost_x[-1] + cost_y[-1])# +  2 * cost_psi[-1] #+ cost_smoothness_a + cost_smoothness_w# + 200 * cost_obs + 200 * cost_robot_obs 
+		cost_ = 10000 * lamda_1 + 250 * lamda_2 + 50000 * (lamda_shelf) + 20 * cost_xy + 50 * cost_xy[-1] +  5 * cost_psi + 10 * cost_psi[-1] + 10 * cost_smoothness_a + 10 * cost_smoothness_w# + 200 * cost_obs + 200 * cost_robot_obs 
 		cost = np.sum(cost_) 
 
 		return cost
@@ -227,7 +226,7 @@ def odomCallback(data):
 	state[0] = x + init[0]
 	state[1] = y + init[1]
 	state[2] = psi
-
+	
 	if rx0 == 5:
 		rx0 = 1
 
@@ -247,13 +246,14 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(4.2, -0.35, 0, 5, 1)
+	myRobot = ModelPredictiveControl(2.1,-0.15, 0, 5, 0.5)
 	u = np.zeros(2*myRobot.horizon)
 	u_psidot = []
 	u_v = []
 	sim_time = []
 	iter = 0
 	mode = "solo"
+	t = time()
 	while not rospy.is_shutdown():
 		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
 		res_x = abs(state[0]- myRobot.goal[0])
@@ -275,10 +275,13 @@ if __name__ == '__main__':
 			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
 			u_psidot.append(u[myRobot.horizon])
 			u_v.append(u[0])
-
 			
+			if dist_goal <= 0.1:
+				myRobot.goal[0] = 4.2
 			if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
-				print("Mean optimization Time: ", myRobot.te/myRobot.loop)
+				pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
+				break
+			if time() - t >= 30:
 				pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
 				break
 		rate.sleep()

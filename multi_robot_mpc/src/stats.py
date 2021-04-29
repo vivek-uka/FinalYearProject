@@ -5,6 +5,7 @@ from multi_robot_mpc.msg import States
 import matplotlib.pyplot as plt
 from nav_msgs.msg import Odometry
 from time import time
+
 rx0 = 0
 rx1 = 0
 rx2 = 0
@@ -35,7 +36,7 @@ states_y3 = []
 states_psi3 = []
 
 v0 = wz0 = v1 = wz1 = v2 = wz2 = v3 = wz3 = 0.0
-goal0 = [4.2, -0.35, 0]
+goal0 = [4.2, -0.15, 0]
 goal1 = [-4.0, 1.2, 0.0]
 goal2= [-4, -3, -np.pi/4]
 goal3 = [1.7, -4, -np.pi/4]
@@ -43,10 +44,10 @@ goal3 = [1.7, -4, -np.pi/4]
 obsx = [-2.5, 0.34, 0.34, -1, -2.4]#[-1.7, -0.36, -1.7, -1, -0.36] #[-6, -6, -5, -5, -5.5] 
 obsy = [0.5, 0.51, -2.27, -0.8, -2.2]#[-1.5, -0.36, -0.36, -0.8, -1.5] #[0.5, 1.5, 1.5, 0.5, 1]
 
-shelfx = [4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08]
-shelfy = [-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7]
-shelfa = [3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9]
-shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87] 
+shelfx = [4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08, -5.79]
+shelfy = [-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7, -0.95]
+shelfa = [3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42]
+shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18] 
 
 def statesCallback0(data):
 	global states_x0, states_y0, states_psi0, rx0, state0, init0
@@ -238,8 +239,8 @@ if __name__ == '__main__':
 			# print(round(simulation_psi_residue0[-1], 2), round(simulation_x_residue0[-1], 2), round(simulation_y_residue0[-1], 2))
 			if simulation_x_residue0[-1] < 0.01 and simulation_y_residue0[-1] < 0.01 and simulation_psi_residue0[-1] < 0.01:
 				break
-			# if time() - t >= 50:
-			# 	break
+			if time() - t >= 30:
+				break
 			plt.clf()
 			ax1 = fig.add_subplot(1, 1, 1)
 			ax1.set_aspect(1)

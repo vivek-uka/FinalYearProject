@@ -35,8 +35,8 @@ def cost_func(u, state, v_optimal, psidot_optimal, horizon, dt):
 
 	
 	
-	obsx = [-2.5, 0.34, 0.34, -1, -2.4]#[-6, -6, -5, -5, -5.5] 
-	obsy = [0.5, 0.51, -2.27, -0.8, -2.2]#[0.5, 1.5, 1.5, 0.5, 1]
+	obsx = [0.25, 0.5, 0.34, -1, -2.4]#[-2.5, 0.34, 0.34, -1, -2.4]#[-6, -6, -5, -5, -5.5] 
+	obsy = [0.5, 0.25, -2.27, -0.8, -2.2]#[0.5, 0.51, -2.27, -0.8, -2.2]#[0.5, 1.5, 1.5, 0.5, 1]
 
 	psi = [state[2] + u[horizon] * dt]
 	rn = [state[0] + u[0] * np.cos(psi[0]) * dt]
@@ -74,7 +74,7 @@ def cost_func(u, state, v_optimal, psidot_optimal, horizon, dt):
 
 if __name__ == '__main__':
 
-	horizon = 35 # 10, 20, 25, 35, 50, 75, 100
+	horizon = 50 # 10, 20, 25, 35, 50, 75, 100
 	dt = 0.5
 	state = [0, 0, 0]
 	u_optimal = [0 , 0]
@@ -98,4 +98,4 @@ if __name__ == '__main__':
 	plt.scatter([0], [0])
 	plt.scatter([1], [1])
 	plt.plot(pre_x, pre_y)
-	# plt.show()
+	plt.show()

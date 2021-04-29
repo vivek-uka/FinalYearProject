@@ -144,19 +144,19 @@ class ModelPredictiveControl:
 		cost_psi = (psi - self.psi_terminal) ** 2
 		
 
-		dist_robot0 = np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2)
-		dist_robot2 = np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2)
-		dist_robot3 = np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2)
-		cost_robot_obs0 = (1 / dist_robot0) * ((self.rr + 0.5 - dist_robot0)/(abs(self.rr + 0.5 - dist_robot0)+0.000000000001) + 1)
-		cost_robot_obs2 = (1 / dist_robot2) * ((self.rr + 0.5 - dist_robot2)/(abs(self.rr + 0.5 - dist_robot2)+0.000000000001) + 1)
-		cost_robot_obs3 = (1 / dist_robot3) * ((self.rr + 0.5 - dist_robot3)/(abs(self.rr + 0.5 - dist_robot3)+0.000000000001) + 1)
-		cost_robot_obs = cost_robot_obs0 + cost_robot_obs2 + cost_robot_obs3
+		# dist_robot0 = np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2)
+		# dist_robot2 = np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2)
+		# dist_robot3 = np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2)
+		# cost_robot_obs0 = (1 / dist_robot0) * ((self.rr + 0.5 - dist_robot0)/(abs(self.rr + 0.5 - dist_robot0)+0.000000000001) + 1)
+		# cost_robot_obs2 = (1 / dist_robot2) * ((self.rr + 0.5 - dist_robot2)/(abs(self.rr + 0.5 - dist_robot2)+0.000000000001) + 1)
+		# cost_robot_obs3 = (1 / dist_robot3) * ((self.rr + 0.5 - dist_robot3)/(abs(self.rr + 0.5 - dist_robot3)+0.000000000001) + 1)
+		# cost_robot_obs = cost_robot_obs0 + cost_robot_obs2 + cost_robot_obs3
 
-		dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
-		cost_obs = ((self.r[0] + self.rr + 0.25 - dist_obs)/(abs(self.r[0] + self.rr + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
-		cost_obs = np.sum(cost_obs, axis=0)
+		# dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
+		# cost_obs = ((self.r[0] + self.rr + 0.25 - dist_obs)/(abs(self.r[0] + self.rr + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
+		# cost_obs = np.sum(cost_obs, axis=0)
 
-		cost_ = 700 * lamda_1 + 700 * lamda_2 + 20 * cost_xy + 80 * cost_xy[-1] + 2 * cost_psi[-1] + (cost_smoothness_a + cost_smoothness_w) + 200 * cost_obs + 200 * cost_robot_obs 
+		cost_ = 10000 * lamda_1 + 250 * lamda_2 + 50000 * (lamda_shelf) + 20 * cost_xy + 50 * cost_xy[-1] +  5 * cost_psi + 10 * cost_psi[-1] + 10 * cost_smoothness_a + 10 * cost_smoothness_w# + 200 * cost_obs + 200 * cost_robot_obs 
 		cost = np.sum(cost_) 
 
 		return cost

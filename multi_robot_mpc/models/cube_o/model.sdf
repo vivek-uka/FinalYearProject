@@ -16,7 +16,7 @@
         <pose frame=''>0 0 0 0 -0 0</pose>
       </inertial>
       <gravity>1</gravity>
-      <self_collide>0</self_collide>
+      <self_collide>1</self_collide>
       <kinematic>1</kinematic>
       <visual name='visual'>
         <pose frame=''>0 0 0 0 -0 0</pose>
@@ -99,6 +99,6 @@
       </collision>
     </link>
     <static>0</static>
-    <allow_auto_disable>1</allow_auto_disable>
+    <allow_auto_disable>0</allow_auto_disable>
   </model>
 </sdf>

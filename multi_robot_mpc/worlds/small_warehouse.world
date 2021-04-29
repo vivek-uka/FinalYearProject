@@ -2,15 +2,27 @@
 <sdf version="1.6">
   <world name="default">
     
-    <gravity>0 0 -9.8</gravity>
-    <physics default="0" name="default_physics" type="ode">
+    
+    <!-- <physics default="0" name="default_physics" type="ode">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1</real_time_factor>
       <real_time_update_rate>1000</real_time_update_rate>
+    </physics> -->
+    <physics type="ode">
+      <ode>
+        <solver>
+          <type>world</type>
+        </solver>
+        <constraints>
+          <contact_max_correcting_vel>0.1</contact_max_correcting_vel>
+          <contact_surface_layer>0.0001</contact_surface_layer>
+        </constraints>
+      </ode>
+      <max_step_size>0.001</max_step_size>
     </physics>
-
-    
-        <model name="aws_robomaker_warehouse_RoofB_01_001">
+    <gravity>0 0 -9.8</gravity>
+   
+    <model name="aws_robomaker_warehouse_RoofB_01_001">
         <include>
             <uri>model://aws_robomaker_warehouse_RoofB_01</uri>
         </include>
@@ -72,7 +84,13 @@
         </include>
         <pose frame="">4.73156 -6.750542 0 0 0 0</pose>
 	</model>
-
+    <model name="obs2">
+        <include>
+            <uri>model://unit_box</uri>
+        </include>
+        <pose frame="">0.34 0.51 5 0 0 0</pose>
+        <!-- <pose frame="">-6 1.5 0 0 0 0</pose> -->
+	</model>
         <!--model name="aws_robomaker_warehouse_DeskC_01_001">
         <include>
             <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
