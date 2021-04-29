@@ -10,7 +10,7 @@ from multi_robot_mpc.msg import States
 
 
 state = [0.5, -0.866025, 1.57]
-init = [-4, 1.2, 1.57]
+init = [0, -1, 1.57]
 
 states_x1 = []
 states_y1 = []
@@ -35,7 +35,7 @@ class ModelPredictiveControl:
 
 	def __init__(self, x_g, y_g, psi_g, angular_max, linear_max):
 
-		self.horizon = 10
+		self.horizon = 5
 		self.control = 1
 		self.dt = 0.5
 		self.psidot_max = angular_max
@@ -54,8 +54,8 @@ class ModelPredictiveControl:
 		self.obsy = [-1.5, -0.36, -0.36, -0.8, -1.5]#[0.5, 1.5, 1.5, 0.5, 1]
 		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
 		self.rr = 0.35
-		l = 1 #square config
-		self.config_matrix = [[0, l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2)], [l/np.sqrt(2), 0, l/np.sqrt(2), 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l/np.sqrt(2), 0, l/np.sqrt(2)], [l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2), 0]]
+		l = 1#square config
+		self.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 
 	def optimize(self, state, u, mode,steps=25, lr=0.001, decay=0.9, eps=1e-8):
 
@@ -103,13 +103,13 @@ class ModelPredictiveControl:
 		self.pre_states.y0 = state[1]
 		self.pre_states.psi0 = state[2]
 
-		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max*0.0 - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
+		lamda_1 = np.maximum(np.zeros(self.horizon), -0.0*self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
 		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2 
 
 		cost_dist = (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - self.config_matrix[3][1]) ** 2 + (np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2) - self.config_matrix[3][2]) ** 2 + (np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2) - self.config_matrix[3][0]) ** 2 
 		cost_psi = (psi - states_psi1) ** 2
-		cost_ = 500 * lamda_1 + 500 * lamda_2 + 100 * cost_dist + 2 * cost_psi + 10 * self.job * cost_xy
+		cost_ = 1000 * lamda_1 + 500 * lamda_2 + 100 * cost_dist + 15 * cost_psi + 25 * self.job * cost_xy 
 		
 		cost = np.sum(cost_) 
 		
@@ -231,10 +231,10 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(1.7, -4, -np.pi/4, 5, 1)
+	myRobot = ModelPredictiveControl(1.7, -4, -np.pi/4, 5, 0.5)
 	u = np.zeros(2*myRobot.horizon)
 	
-	mode = "solo"
+	mode = "multi"
 	while not rospy.is_shutdown():
 		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
 		res_x = abs(state[0]- myRobot.goal[0])

@@ -1,8 +1,8 @@
 <launch>
  <node pkg="multi_robot_mpc" type="main_robot0.py" name="robot0" output="screen"></node>
-<!-- <node pkg="multi_robot_mpc" type="main_robot1.py" name="robot1" output="screen"></node>
+<node pkg="multi_robot_mpc" type="main_robot1.py" name="robot1" output="screen"></node>
 <node pkg="multi_robot_mpc" type="main_robot2.py" name="robot2" output="screen"></node>
-<node pkg="multi_robot_mpc" type="main_robot3.py" name="robot3" output="screen"></node>-->
+<node pkg="multi_robot_mpc" type="main_robot3.py" name="robot3" output="screen"></node>
 <node pkg="multi_robot_mpc" type="stats.py" name="stats" output="screen"></node> 
 </launch>
 

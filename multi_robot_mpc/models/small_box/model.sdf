@@ -5,7 +5,7 @@
     <static>false</static>
     <link name="link">
       <inertial>
-        <mass>2.0</mass>
+        <mass>20.0</mass>
         <inertia>
           <ixx>0.0008611666666666669</ixx>
           <ixy>0</ixy>

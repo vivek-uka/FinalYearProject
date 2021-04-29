@@ -37,7 +37,7 @@ states_psi3 = []
 
 v0 = wz0 = v1 = wz1 = v2 = wz2 = v3 = wz3 = 0.0
 goal0 = [4.2, -0.15, 0]
-goal1 = [-4.0, 1.2, 0.0]
+goal1 = [-1, 5, 0.0]
 goal2= [-4, -3, -np.pi/4]
 goal3 = [1.7, -4, -np.pi/4]
 
@@ -215,13 +215,13 @@ if __name__ == '__main__':
 	trajx3 = []
 	trajy3 = []
 	t = time()
-	l = 0.5
-	config_matrix = [[0, l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2)], 
-					 [l/np.sqrt(2), 0, l/np.sqrt(2), 2*l/np.sqrt(2)], 
-					 [2*l/np.sqrt(2), l/np.sqrt(2), 0, l/np.sqrt(2)], 
-					 [l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2), 0]]
+	l = 1
+	config_matrix = [[0, l, 2*l/np.sqrt(2), l], 
+						  [l, 0, l, 2*l/np.sqrt(2)], 
+						  [2*l/np.sqrt(2), l, 0, l],
+						  [l, 2*l/np.sqrt(2), l, 0]]
 	while not rospy.is_shutdown():
-		if rx0 >= 5:
+		"""if rx0 >= 5:
 			iter += 1
 			r = 0.2 * np.sqrt(2)/ 2+0.32
 			dist_goal = np.sqrt((goal0[0] - state0[0]) ** 2 + (goal0[1] - state0[1]) ** 2)
@@ -284,13 +284,13 @@ if __name__ == '__main__':
 			plt.plot(states_x0, states_y0, linestyle=':',color='red')
 			#plt.title('Obstacle avoidance')
 			plt.draw()
-			plt.pause(0.000001)
+			plt.pause(0.000001)"""
 
-		"""if rx0 >= 5 and rx1 >= 5 and rx2 >= 5 and rx3 >= 5:
+		if rx0 >= 5 and rx1 >= 5 and rx2 >= 5 and rx3 >= 5:
 			plt.clf()
 			iter+=1
 			simulation_time.append(iter * 1/freq)
-			dist_goal = np.sqrt((state1[0] - (-4.6))**2 + (state1[1] - (-0.5))**2)
+			dist_goal = np.sqrt((state1[0] - (goal1[0]))**2 + (state1[1] - goal1[1])**2)
 			dist_01.append(abs(dist(state0[0], state0[1], state1[0], state1[1]) - config_matrix[0][1]))
 			dist_02.append(abs(dist(state0[0], state0[1], state2[0], state2[1]) - config_matrix[0][2]))
 			dist_03.append(abs(dist(state0[0], state0[1], state3[0], state3[1]) - config_matrix[0][3]))
@@ -303,21 +303,21 @@ if __name__ == '__main__':
 			plt.scatter(state1[0], state1[1], linewidths=0.05, color='green')
 			plt.scatter(state2[0], state2[1], linewidths=0.05, color='blue')
 			plt.scatter(state3[0], state3[1], linewidths=0.05, color='orange')
-			plt.scatter(-4.6, -0.5, linewidths=0.05, color='black')
+			plt.scatter(goal1[0], goal1[1], linewidths=0.05, color='black')
 			plt.plot(states_x0, states_y0, linestyle=':',color='black')
 			plt.plot(states_x1, states_y1, linestyle=':',color='black')
 			plt.plot(states_x2, states_y2, linestyle=':',color='black')
 			plt.plot(states_x3, states_y3, linestyle=':',color='black')
 			ax1.set_aspect(1)
-			if(dist_goal < 0.05):
+			if(dist_goal < 0.5):
 				break
 			plt.xlabel('x')
 			plt.ylabel('y')
-			plt.xlim(-7, 0)
-			plt.ylim(-4, 6)
+			plt.xlim(-5, 5)
+			plt.ylim(-5, 5)
 			plt.draw()
 			plt.pause(0.000001)
-			print(round(dist_01[-1], 3), round(dist_02[-1], 3), round(dist_03[-1], 3), round(dist_12[-1], 3), round(dist_13[-1], 3), round(dist_23[-1], 3))"""
+			print(round(dist_01[-1], 3), round(dist_02[-1], 3), round(dist_03[-1], 3), round(dist_12[-1], 3), round(dist_13[-1], 3), round(dist_23[-1], 3))
 		"""if rx0 >= 5 and rx1 >= 5 and rx2 >=5 and rx3 >=5:
 			plt.clf()
 			ax1 = fig.add_subplot(1, 1, 1)
@@ -453,55 +453,55 @@ if __name__ == '__main__':
 	psidot_max = 5
 
 	# print(round(np.mean(dist_01), 3), round(np.mean(dist_02), 3), round(np.mean(dist_03), 3), round(np.mean(dist_12), 3), round(np.mean(dist_13), 3), round(np.mean(dist_23), 3))
-	# plt.figure(5)
-	# plt.title('distance_error')
-	# plt.plot(simulation_time, dist_01)
-	# plt.plot(simulation_time, dist_02)
-	# plt.plot(simulation_time, dist_03)
-	# plt.plot(simulation_time, dist_12)
-	# plt.plot(simulation_time, dist_13)
-	# plt.plot(simulation_time, dist_23)
-	# plt.legend(["dist_01", "dist_02", "dist_03", "dist_12", "dist_13", "dist_23"])
-	
 	plt.figure(5)
-	plt.title('residue_goal')
-	plt.plot(simulation_time, simulation_x_residue0)
-	plt.plot(simulation_time, simulation_y_residue0)
-	# plt.plot(simulation_time, simulation_x_residue1)
-	# plt.plot(simulation_time, simulation_y_residue1)
-	# plt.plot(simulation_time, simulation_x_residue2)
-	# plt.plot(simulation_time, simulation_y_residue2)
-	# plt.plot(simulation_time, simulation_x_residue3)
-	# plt.plot(simulation_time, simulation_y_residue3)
-	plt.legend(["res_x0", "res_y0", "res_x1", "res_y1", "res_x2", "res_y2", "res_x3", "res_y3"], loc ="upper right")
+	plt.title('distance_error')
+	plt.plot(simulation_time, dist_01)
+	plt.plot(simulation_time, dist_02)
+	plt.plot(simulation_time, dist_03)
+	plt.plot(simulation_time, dist_12)
+	plt.plot(simulation_time, dist_13)
+	plt.plot(simulation_time, dist_23)
+	plt.legend(["dist_01", "dist_02", "dist_03", "dist_12", "dist_13", "dist_23"])
+	
+	# plt.figure(5)
+	# plt.title('residue_goal')
+	# plt.plot(simulation_time, simulation_x_residue0)
+	# plt.plot(simulation_time, simulation_y_residue0)
+	# # plt.plot(simulation_time, simulation_x_residue1)
+	# # plt.plot(simulation_time, simulation_y_residue1)
+	# # plt.plot(simulation_time, simulation_x_residue2)
+	# # plt.plot(simulation_time, simulation_y_residue2)
+	# # plt.plot(simulation_time, simulation_x_residue3)
+	# # plt.plot(simulation_time, simulation_y_residue3)
+	# plt.legend(["res_x0", "res_y0", "res_x1", "res_y1", "res_x2", "res_y2", "res_x3", "res_y3"], loc ="upper right")
 
-	plt.figure(2)
-	plt.title('v')
-	plt.plot(simulation_time, simulation_v0)
-	# plt.plot(simulation_time, simulation_v1)
-	# plt.plot(simulation_time, simulation_v2)
-	# plt.plot(simulation_time, simulation_v3)
-	plt.plot([0, simulation_time[-1]], [v_max, v_max])
-	plt.plot([0, simulation_time[-1]], [-v_max, -v_max])
-	plt.legend(["linear_velocity", "max_bounds", "min_bounds"], loc ="upper right")
+	# plt.figure(2)
+	# plt.title('v')
+	# plt.plot(simulation_time, simulation_v0)
+	# # plt.plot(simulation_time, simulation_v1)
+	# # plt.plot(simulation_time, simulation_v2)
+	# # plt.plot(simulation_time, simulation_v3)
+	# plt.plot([0, simulation_time[-1]], [v_max, v_max])
+	# plt.plot([0, simulation_time[-1]], [-v_max, -v_max])
+	# plt.legend(["linear_velocity", "max_bounds", "min_bounds"], loc ="upper right")
 
-	plt.figure(3)
-	plt.title('psidot')
-	plt.plot(simulation_time, simulation_psidot0)
-	# plt.plot(simulation_time, simulation_psidot1)
-	# plt.plot(simulation_time, simulation_psidot2)
-	# plt.plot(simulation_time, simulation_psidot3)
-	plt.plot([0, simulation_time[-1]], [psidot_max, psidot_max])
-	plt.plot([0, simulation_time[-1]], [-psidot_max, -psidot_max])
-	plt.legend(["angular_velocity", "max_bounds", "min_bounds"], loc ="upper right")
+	# plt.figure(3)
+	# plt.title('psidot')
+	# plt.plot(simulation_time, simulation_psidot0)
+	# # plt.plot(simulation_time, simulation_psidot1)
+	# # plt.plot(simulation_time, simulation_psidot2)
+	# # plt.plot(simulation_time, simulation_psidot3)
+	# plt.plot([0, simulation_time[-1]], [psidot_max, psidot_max])
+	# plt.plot([0, simulation_time[-1]], [-psidot_max, -psidot_max])
+	# plt.legend(["angular_velocity", "max_bounds", "min_bounds"], loc ="upper right")
 
-	plt.figure(4)
-	plt.title('res_psi')
-	plt.plot(simulation_time, simulation_psi_residue0)
-	# plt.plot(simulation_time, simulation_psi_residue1)
-	# plt.plot(simulation_time, simulation_psi_residue2)
-	# plt.plot(simulation_time, simulation_psi_residue3)
-	plt.legend(["res_psi0", "res_psi1", "res_psi2", "res_psi3"], loc="upper right")
+	# plt.figure(4)
+	# plt.title('res_psi')
+	# plt.plot(simulation_time, simulation_psi_residue0)
+	# # plt.plot(simulation_time, simulation_psi_residue1)
+	# # plt.plot(simulation_time, simulation_psi_residue2)
+	# # plt.plot(simulation_time, simulation_psi_residue3)
+	# plt.legend(["res_psi0", "res_psi1", "res_psi2", "res_psi3"], loc="upper right")
 
 	# plt.figure(9)
 	# plt.title('Dist to Obstacles0')

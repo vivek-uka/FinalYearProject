@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 state = [2.5, -2.1, 1.57]
-init = [2.1, -6.6, 1.57]
+init = [-1, 0, 1.57]
 states_x1 = []
 states_y1 = []
 states_psi1 = []
@@ -60,9 +60,9 @@ class ModelPredictiveControl:
  		self.shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18] 
 		
 		l = 1 #square config
-		self.config_matrix = [[0, l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2)], [l/np.sqrt(2), 0, l/np.sqrt(2), 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l/np.sqrt(2), 0, l/np.sqrt(2)], [l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2), 0]]
+		self.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 
-	def optimize(self, state, u, mode,steps=25, lr=0.005, decay=0.9, eps=1e-8):
+	def optimize(self, state, u, mode,steps=25, lr=0.001, decay=0.9, eps=1e-8):
 
 		dx_mean_sqr = np.zeros(self.horizon*2)
 
@@ -97,9 +97,6 @@ class ModelPredictiveControl:
 		rn = np.array(rn)
 		re = np.array(re)
 		psi = np.array(psi)
-
-		#rn = state[0] + np.array([u[i] * np.cos(psi[i]) * self.dt *(i+1) for i in range(self.horizon)], dtype=float)
-		#re = state[1] + np.array([u[i] * np.sin(psi[i]) * self.dt *(i+1) for i in range(self.horizon)], dtype=float)
 			
 		self.pre_states.x = rn._value
 		self.pre_states.y = re._value
@@ -108,13 +105,13 @@ class ModelPredictiveControl:
 		self.pre_states.y0 = state[1]
 		self.pre_states.psi0 = state[2]
 		
-		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max*0.0 - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
+		lamda_1 = np.maximum(np.zeros(self.horizon), -0.0*self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
 		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2 		
 		
 		cost_dist = (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - self.config_matrix[0][1]) ** 2 + (np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2) - self.config_matrix[0][2]) ** 2 + (np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2) - self.config_matrix[0][3]) ** 2
 		cost_psi = (psi - states_psi1) ** 2
-		cost_ = 500 * lamda_1 + 500 * lamda_2 + 100 * cost_dist + 2 * cost_psi + 10 * self.job * cost_xy 
+		cost_ = 1000 * lamda_1 + 500 * lamda_2 + 100 * cost_dist + 15 * cost_psi + 10 * self.job * cost_xy 
 		
 		cost = np.sum(cost_) 
 
@@ -252,7 +249,7 @@ if __name__ == '__main__':
 	u_v = []
 	sim_time = []
 	iter = 0
-	mode = "solo"
+	mode = "multi"
 	t = time()
 	while not rospy.is_shutdown():
 		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
@@ -276,14 +273,14 @@ if __name__ == '__main__':
 			u_psidot.append(u[myRobot.horizon])
 			u_v.append(u[0])
 			
-			if dist_goal <= 0.1:
-				myRobot.goal[0] = 4.2
-			if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
-				pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
-				break
-			if time() - t >= 30:
-				pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
-				break
+			# if dist_goal <= 0.1:
+			# 	myRobot.goal[0] = 4.2
+			# if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
+			# 	pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
+			# 	break
+			# if time() - t >= 30:
+			# 	pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
+			# 	break
 		rate.sleep()
 
 	v_max = 1

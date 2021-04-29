@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 state = [0.5, 0.866025, 1.57]
-init = [1.7, -4, 1.57]
+init = [0, 1, 1.57]
 
 states_x0 = []
 states_y0 = []
@@ -35,7 +35,7 @@ class ModelPredictiveControl:
 
 	def __init__(self, x_g, y_g, psi_g, angular_max, linear_max):
 
-		self.horizon = 10
+		self.horizon = 5
 		self.control = 1
 		self.dt = 0.5
 		self.psidot_max = angular_max
@@ -56,7 +56,7 @@ class ModelPredictiveControl:
 		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
 		self.rr = 0.35
 
-		self.config_matrix = [[0, l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2)], [l/np.sqrt(2), 0, l/np.sqrt(2), 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l/np.sqrt(2), 0, l/np.sqrt(2)], [l/np.sqrt(2), 2*l/np.sqrt(2), l/np.sqrt(2), 0]]
+		self.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 
 	def optimize(self, state, u, mode,steps=25, lr=0.001, decay=0.9, eps=1e-8):
 
@@ -108,7 +108,7 @@ class ModelPredictiveControl:
 		
 		cost_dist = (np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2) - self.config_matrix[0][1]) ** 2 + (np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2) - self.config_matrix[1][2]) ** 2 + (np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2) - self.config_matrix[1][3]) ** 2
 		
-		cost_ = 500 * lamda_1 + 500 * lamda_2 + 100 * cost_dist + 10 * self.job * cost_xy
+		cost_ = 1000 * lamda_1 + 500 * lamda_2 + 200 * cost_dist + 10 * self.job * cost_xy
 		
 		cost = np.sum(cost_) 
 		
@@ -238,10 +238,10 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(-4.0, 1.2, 0.0, 5, 1)
+	myRobot = ModelPredictiveControl(-1, 5, 0.0, 5, 0.5)
 	u = np.zeros(2*myRobot.horizon)
 		
-	mode = "solo"
+	mode = "multi"
 	while not rospy.is_shutdown():
 		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
 		res_x = abs(state[0]- myRobot.goal[0])
