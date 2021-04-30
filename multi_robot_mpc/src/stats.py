@@ -36,8 +36,8 @@ states_y3 = []
 states_psi3 = []
 
 v0 = wz0 = v1 = wz1 = v2 = wz2 = v3 = wz3 = 0.0
-goal0 = [4.2, -0.15, 0]
-goal1 = [-1, 5, 0.0]
+goal0 = [3.1, 2.1, 0]
+goal1 = [0, 5, 0.0]
 goal2= [-4, -3, -np.pi/4]
 goal3 = [1.7, -4, -np.pi/4]
 
@@ -215,13 +215,13 @@ if __name__ == '__main__':
 	trajx3 = []
 	trajy3 = []
 	t = time()
-	l = 1
+	l = (0.5+0.1825*2)*np.sqrt(2)/2
 	config_matrix = [[0, l, 2*l/np.sqrt(2), l], 
 						  [l, 0, l, 2*l/np.sqrt(2)], 
 						  [2*l/np.sqrt(2), l, 0, l],
 						  [l, 2*l/np.sqrt(2), l, 0]]
 	while not rospy.is_shutdown():
-		"""if rx0 >= 5:
+		if rx0 >= 5:
 			iter += 1
 			r = 0.2 * np.sqrt(2)/ 2+0.32
 			dist_goal = np.sqrt((goal0[0] - state0[0]) ** 2 + (goal0[1] - state0[1]) ** 2)
@@ -239,8 +239,8 @@ if __name__ == '__main__':
 			# print(round(simulation_psi_residue0[-1], 2), round(simulation_x_residue0[-1], 2), round(simulation_y_residue0[-1], 2))
 			if simulation_x_residue0[-1] < 0.01 and simulation_y_residue0[-1] < 0.01 and simulation_psi_residue0[-1] < 0.01:
 				break
-			if time() - t >= 30:
-				break
+			# if time() - t >= 30:
+			# 	break
 			plt.clf()
 			ax1 = fig.add_subplot(1, 1, 1)
 			ax1.set_aspect(1)
@@ -284,9 +284,9 @@ if __name__ == '__main__':
 			plt.plot(states_x0, states_y0, linestyle=':',color='red')
 			#plt.title('Obstacle avoidance')
 			plt.draw()
-			plt.pause(0.000001)"""
+			plt.pause(0.000001)
 
-		if rx0 >= 5 and rx1 >= 5 and rx2 >= 5 and rx3 >= 5:
+		"""if rx0 >= 5 and rx1 >= 5 and rx2 >= 5 and rx3 >= 5:
 			plt.clf()
 			iter+=1
 			simulation_time.append(iter * 1/freq)
@@ -317,7 +317,7 @@ if __name__ == '__main__':
 			plt.ylim(-5, 5)
 			plt.draw()
 			plt.pause(0.000001)
-			print(round(dist_01[-1], 3), round(dist_02[-1], 3), round(dist_03[-1], 3), round(dist_12[-1], 3), round(dist_13[-1], 3), round(dist_23[-1], 3))
+			print(round(dist_01[-1], 3), round(dist_02[-1], 3), round(dist_03[-1], 3), round(dist_12[-1], 3), round(dist_13[-1], 3), round(dist_23[-1], 3))"""
 		"""if rx0 >= 5 and rx1 >= 5 and rx2 >=5 and rx3 >=5:
 			plt.clf()
 			ax1 = fig.add_subplot(1, 1, 1)
@@ -453,15 +453,15 @@ if __name__ == '__main__':
 	psidot_max = 5
 
 	# print(round(np.mean(dist_01), 3), round(np.mean(dist_02), 3), round(np.mean(dist_03), 3), round(np.mean(dist_12), 3), round(np.mean(dist_13), 3), round(np.mean(dist_23), 3))
-	plt.figure(5)
-	plt.title('distance_error')
-	plt.plot(simulation_time, dist_01)
-	plt.plot(simulation_time, dist_02)
-	plt.plot(simulation_time, dist_03)
-	plt.plot(simulation_time, dist_12)
-	plt.plot(simulation_time, dist_13)
-	plt.plot(simulation_time, dist_23)
-	plt.legend(["dist_01", "dist_02", "dist_03", "dist_12", "dist_13", "dist_23"])
+	# plt.figure(5)
+	# plt.title('distance_error')
+	# plt.plot(simulation_time, dist_01)
+	# plt.plot(simulation_time, dist_02)
+	# plt.plot(simulation_time, dist_03)
+	# plt.plot(simulation_time, dist_12)
+	# plt.plot(simulation_time, dist_13)
+	# plt.plot(simulation_time, dist_23)
+	# plt.legend(["dist_01", "dist_02", "dist_03", "dist_12", "dist_13", "dist_23"])
 	
 	# plt.figure(5)
 	# plt.title('residue_goal')

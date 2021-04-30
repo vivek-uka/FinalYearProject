@@ -10,7 +10,7 @@ from multi_robot_mpc.msg import States
 
 
 state = [0.5, -0.866025, 1.57]
-init = [0, -1, 1.57]
+init = [0, -0.5, 1.57]
 
 states_x1 = []
 states_y1 = []
@@ -54,7 +54,7 @@ class ModelPredictiveControl:
 		self.obsy = [-1.5, -0.36, -0.36, -0.8, -1.5]#[0.5, 1.5, 1.5, 0.5, 1]
 		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
 		self.rr = 0.35
-		l = 1#square config
+		l = 0.667#square config b(0.1825) l(0.26) divided bt 2
 		self.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 
 	def optimize(self, state, u, mode,steps=25, lr=0.001, decay=0.9, eps=1e-8):
@@ -231,7 +231,7 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(1.7, -4, -np.pi/4, 5, 0.5)
+	myRobot = ModelPredictiveControl(1.7, -4, -np.pi/4, 5, 1)
 	u = np.zeros(2*myRobot.horizon)
 	
 	mode = "multi"

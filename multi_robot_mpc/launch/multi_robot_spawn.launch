@@ -4,20 +4,20 @@
     <arg name="third_volta"  default="volta_2"/>
     <arg name="fourth_volta"  default="volta_3"/>
 
-    <arg name="first_volta_x_pos" default="-1"/>
-    <arg name="first_volta_y_pos" default="0"/>
+    <arg name="first_volta_x_pos" default="-3.6"/>
+    <arg name="first_volta_y_pos" default="8.2"/>
     <arg name="first_volta_yaw"   default=" 1.57"/>
 
     <arg name="second_volta_x_pos" default=" 0"/>
-    <arg name="second_volta_y_pos" default=" 1"/>
+    <arg name="second_volta_y_pos" default=" 0.5"/>
     <arg name="second_volta_yaw"   default=" 1.57"/>
 
-    <arg name="third_volta_x_pos" default=" 1"/>
+    <arg name="third_volta_x_pos" default=" 0.46"/>
     <arg name="third_volta_y_pos" default=" 0"/>
     <arg name="third_volta_yaw"   default=" 1.57"/>
 
     <arg name="fourth_volta_x_pos" default=" 0"/>
-    <arg name="fourth_volta_y_pos" default=" -1"/>
+    <arg name="fourth_volta_y_pos" default=" -0.5"/>
     <arg name="fourth_volta_yaw"   default=" 1.57"/>
 
      
@@ -35,11 +35,11 @@
     <node name="robot_pose_publisher" pkg="robot_pose_publisher" type="robot_pose_publisher" respawn="true"/>
     </group>
     
-    <group ns = "$(arg second_volta)">
+    <!-- <group ns = "$(arg second_volta)">
     <arg name="model" default="$(find volta_description)/urdf/volta.xacro"/>
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
-    <param name="robot_description" command="$(find xacro)/xacro.py --inorder $(arg model)"/>
+    <param name="robot_description" command="$(find xacro)/xacro.py inorder $(arg model)"/>
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
         args="-urdf -model second_volta -param robot_description -x $(arg second_volta_x_pos) -y $(arg second_volta_y_pos) -z 0 -R 0 -P 0 -Y $(arg second_volta_yaw)">
     </node>
@@ -52,7 +52,7 @@
     <arg name="model" default="$(find volta_description)/urdf/volta.xacro"/>
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
-    <param name="robot_description" command="$(find xacro)/xacro.py --inorder $(arg model)"/>
+    <param name="robot_description" command="$(find xacro)/xacro.py inorder $(arg model)"/>
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
         args="-urdf -model third_volta -param robot_description -x $(arg third_volta_x_pos) -y $(arg third_volta_y_pos) -z 0 -R 0 -P 0 -Y $(arg third_volta_yaw)">
     </node>
@@ -65,12 +65,12 @@
     <arg name="model" default="$(find volta_description)/urdf/volta.xacro"/>
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
-    <param name="robot_description" command="$(find xacro)/xacro.py --inorder $(arg model)"/>
+    <param name="robot_description" command="$(find xacro)/xacro.py inorder $(arg model)"/>
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
         args="-urdf -model fourth_volta -param robot_description -x $(arg fourth_volta_x_pos) -y $(arg fourth_volta_y_pos) -z 0 -R 0 -P 0 -Y $(arg fourth_volta_yaw)">
     </node>
     <include file="$(find volta_control)/launch/control.launch" />
     <include file="$(find volta_localization)/launch/localization.launch" />
     <node name="robot_pose_publisher" pkg="robot_pose_publisher" type="robot_pose_publisher" respawn="true"/>
-    </group>
+    </group> -->
 </launch>

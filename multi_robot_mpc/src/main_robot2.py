@@ -9,8 +9,8 @@ from multi_robot_mpc.msg import States
 
 
 
-state = [1, 0, 1.57]
-init = [1, 0, 1.57]
+state = [0.5, 0, 1.57]
+init = [0.46, 0, 1.57]
 states_x1 = []
 states_y1 = []
 states_psi1 = []
@@ -54,7 +54,7 @@ class ModelPredictiveControl:
 		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
 		self.rr = 0.35
 
-		l = 1#square config
+		l = 0.667#square config
 		self.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 
 	def optimize(self, state, u, mode,steps=25, lr=0.001, decay=0.9, eps=1e-8):
@@ -235,7 +235,7 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(-4, -3, -np.pi/4, 5, 0.5)
+	myRobot = ModelPredictiveControl(-4, -3, -np.pi/4, 5, 1)
 	u = np.zeros(2*myRobot.horizon)
 		
 	mode = "multi"

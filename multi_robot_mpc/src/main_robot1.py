@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 state = [0.5, 0.866025, 1.57]
-init = [0, 1, 1.57]
+init = [0, 0.5, 1.57]
 
 states_x0 = []
 states_y0 = []
@@ -50,7 +50,7 @@ class ModelPredictiveControl:
 		self.loop = 0.0
 		self.v_optimal = 0.0
 		self.psidot_optimal = 0.0
-		l = 1 #square config
+		l = 0.667 #square config
 		self.obsx = [-2.5, 0.34, 0.34, -1, -2.4]#[-6, -6, -5, -5, -5.5] 
 		self.obsy = [0.5, 0.51, -2.27, -0.8, -2.2]#[0.5, 1.5, 1.5, 0.5, 1]
 		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
@@ -238,7 +238,7 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(-1, 5, 0.0, 5, 0.5)
+	myRobot = ModelPredictiveControl(-0, 5, 0.0, 5, 1)
 	u = np.zeros(2*myRobot.horizon)
 		
 	mode = "multi"
