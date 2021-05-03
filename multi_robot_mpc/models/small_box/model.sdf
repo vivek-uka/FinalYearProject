@@ -5,7 +5,7 @@
     <static>false</static>
     <link name="link">
       <inertial>
-        <mass>1.0</mass>
+        <mass>1</mass>
         <inertia>
           <ixx>0.0008611666666666669</ixx>
           <ixy>0</ixy>
@@ -19,7 +19,7 @@
       <collision name="collision">
         <geometry>
           <box>
-              <size>0.5 0.5 0.18</size>
+              <size>0.4 0.23 0.18</size>
           </box>
         </geometry>
 	<surface>
@@ -35,7 +35,7 @@
         <geometry>
           <mesh>
             <uri>model://small_box/meshes/small_box.dae</uri>
-             <scale> 1.25 2.17 1 </scale> <!--x = 0.4 y = 0.23 -->
+             <scale> 1.0 1 1 </scale> <!--x = 0.4 y = 0.23 -->
           </mesh>
 	</geometry>
       </visual>

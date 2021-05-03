@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 
 
 state = [2.5, -2.1, 1.57]
-init = [-3.6, 8.2, 1.57]
+init = [-3.8, -9.0, 1.57]#[-3.8, -9.7, 1.57]
+state = init
 states_x1 = []
 states_y1 = []
 states_psi1 = []
@@ -35,9 +36,9 @@ class ModelPredictiveControl:
 
 	def __init__(self, x_g, y_g, psi_g, angular_max, linear_max):
 
-		self.horizon = 50
+		self.horizon = 10
 		self.control = 1
-		self.dt = 0.5
+		self.dt = 0.25
 		self.psidot_max = angular_max
 		self.v_max = linear_max
 		self.goal = [x_g, y_g]	
@@ -45,7 +46,7 @@ class ModelPredictiveControl:
 		self.psi_terminal = psi_g
 		self.pub2 = rospy.Publisher('volta_0/pre_state', States, queue_size=10)
 		self.stop = 1
-		self.ob = 0 # follower = 0 leader = 1
+		self.job = 0 # follower = 0 leader = 1
 		self.te = 0.0
 		self.loop = 0.0
 		self.v_optimal = 0.0
@@ -54,15 +55,19 @@ class ModelPredictiveControl:
 		self.obsy = [0.5, 0.51, -2.27, -0.8, -2.2]#[0.5, 1.5, 1.5, 0.5, 1]
 		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
 		self.rr = 0.35
-		self.shelfx = [4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08, -5.79]
-		self.shelfy = [-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7, -0.95]
-		self.shelfa = [3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42]
- 		self.shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18] 
-		
+		self.shelfx = [4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08, -5.79, 0]
+		self.shelfy = [-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7, -0.95, 0]
+		self.shelfa = [3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42, 14]
+ 		self.shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18, 21.5] 
+		self.wayX = [ 1.76, 1.76, x_g]
+		self.wayY = [ -9.0, -2.2, y_g]
+		self.wayPsi = [1.57, 0.0, 0.0]
+		self.goal = [self.wayX[0], self.wayY[0]]
+		self.psi_terminal = self.wayPsi[0]
 		l = 0.667 #square config
 		self.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 
-	def optimize(self, state, u, mode,steps=25, lr=0.001, decay=0.9, eps=1e-8):
+	def optimize(self, state, u, mode,steps=12, lr=0.01, decay=0.9, eps=1e-8):
 
 		dx_mean_sqr = np.zeros(self.horizon*2)
 
@@ -131,7 +136,7 @@ class ModelPredictiveControl:
 		rn = np.array(rn)
 		re = np.array(re)
 		psi = np.array(psi)
-
+		
 			
 		self.pre_states.x = rn._value
 		self.pre_states.y = re._value
@@ -142,9 +147,10 @@ class ModelPredictiveControl:
 
 		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
-		lamda_shelf = np.array([np.maximum(np.zeros(self.horizon), 1 - ((((rn - self.shelfx[i])/(self.shelfa[i]/2 + self.rr))**10 + (((re - self.shelfy[i])/(self.shelfb[i]/2 + self.rr))**10)))) for i in range(len(self.shelfx))], dtype=float)
-		
-		lamda_shelf = np.sum(lamda_shelf, axis = 0)
+		lamda_shelf = np.array([np.maximum(np.zeros(self.horizon), 1 - ((((rn - self.shelfx[i])/(self.shelfa[i]/2 + self.rr))**10 + (((re - self.shelfy[i])/(self.shelfb[i]/2 + self.rr))**10)))) for i in range(len(self.shelfx)-1)], dtype=float)
+		# lamda_w1 = np.maximum(np.zeros(self.horizon), self.shelfa[-1]/2 - rn) + np.maximum(np.zeros(self.horizon), rn - self.shelfa[-1]/2) 
+		# lamda_w2 = np.maximum(np.zeros(self.horizon), self.shelfb[-1]/2 - re) + np.maximum(np.zeros(self.horizon), re - self.shelfb[-1]/2) 
+		lamda_shelf = np.sum(lamda_shelf, axis = 0) 
 		
 		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2
 		cost_smoothness_a = (np.hstack((u[0] - self.v_optimal, np.diff(u[0:self.horizon])))/self.dt) ** 2
@@ -163,7 +169,9 @@ class ModelPredictiveControl:
 		# cost_obs = ((self.r[0] + self.rr + 0.25 - dist_obs)/(abs(self.r[0] + self.rr + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
 		# cost_obs = np.sum(cost_obs, axis=0)
 
-		cost_ = 10000 * lamda_1 + 250 * lamda_2 + 50000 * (lamda_shelf) + 2 * cost_xy + 5 * cost_xy[-1] +  5 * cost_psi + 10 * cost_psi[-1] + 10 * cost_smoothness_a + 10 * cost_smoothness_w# + 200 * cost_obs + 200 * cost_robot_obs 
+		cost_ = 100000 * lamda_1 + 250 * lamda_2 + 1000 * (lamda_shelf) + \
+				20 * cost_xy + 500 * cost_xy[-1] +  2 * cost_psi + 10 * cost_psi[-1] + \
+				1 * cost_smoothness_a + 1 * cost_smoothness_w# + 200 * cost_obs + 200 * cost_robot_obs 
 		cost = np.sum(cost_) 
 
 		return cost
@@ -220,9 +228,9 @@ def odomCallback(data):
 	elif psi < -np.pi:
 		psi = psi + 2 * np.pi
 
-	state[0] = x + init[0]
-	state[1] = y + init[1]
-	state[2] = psi
+	# state[0] = x + init[0]
+	# state[1] = y + init[1]
+	# state[2] = psi
 	
 	if rx0 == 5:
 		rx0 = 1
@@ -243,7 +251,7 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(3.1, 2.1, 0, 5, 1)
+	myRobot = ModelPredictiveControl(5.2, -2.2, 0, 5, 0.5)
 	u = np.zeros(2*myRobot.horizon)
 	u_psidot = []
 	u_v = []
@@ -251,7 +259,20 @@ if __name__ == '__main__':
 	iter = 0
 	mode = "solo"
 	t = time()
+	dist_goal = 1000
+	cnt = 1
 	while not rospy.is_shutdown():
+		# print(dist_goal)
+		if dist_goal <= 0.2:
+			if cnt < len(myRobot.wayX):
+				myRobot.goal[0]= myRobot.wayX[cnt]
+				myRobot.goal[1]= myRobot.wayY[cnt]
+				myRobot.psi_terminal= myRobot.wayPsi[cnt]
+				u = np.zeros(2*myRobot.horizon)
+			else:
+				pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
+				break
+			cnt+=1
 		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
 		res_x = abs(state[0]- myRobot.goal[0])
 		res_y = abs(state[1]- myRobot.goal[1])
@@ -269,10 +290,16 @@ if __name__ == '__main__':
 			u = myRobot.optimize(state, u, mode)
 			myRobot.v_optimal = u[0]
 			myRobot.psidot_optimal = u[myRobot.horizon]
-			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
+			# pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
+			state = [myRobot.pre_states.x[0], myRobot.pre_states.y[0], myRobot.pre_states.psi[0]]
+			if state[2] > np.pi:
+				state[2] = state[2] - 2 * np.pi
+			elif state[2] < -np.pi:
+				state[2] = state[2] + 2 * np.pi
 			u_psidot.append(u[myRobot.horizon])
 			u_v.append(u[0])
-			
+			print(state[0], state[1], state[2]*180/np.pi)
+			print(u[0], u[myRobot.horizon])
 			# if dist_goal <= 0.1:
 			# 	myRobot.goal[0] = 4.2
 			# if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:

@@ -1,1 +1,0 @@
-Mean optimization time: 0.26

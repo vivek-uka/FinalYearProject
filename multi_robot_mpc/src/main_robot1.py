@@ -55,10 +55,10 @@ class ModelPredictiveControl:
 		self.obsy = [0.5, 0.51, -2.27, -0.8, -2.2]#[0.5, 1.5, 1.5, 0.5, 1]
 		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
 		self.rr = 0.35
-
 		self.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
+		
 
-	def optimize(self, state, u, mode,steps=25, lr=0.001, decay=0.9, eps=1e-8):
+	def optimize(self, state, u, mode,steps=12, lr=0.005, decay=0.9, eps=1e-8):
 
 		dx_mean_sqr = np.zeros(self.horizon*2)
 
@@ -108,7 +108,7 @@ class ModelPredictiveControl:
 		
 		cost_dist = (np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2) - self.config_matrix[0][1]) ** 2 + (np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2) - self.config_matrix[1][2]) ** 2 + (np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2) - self.config_matrix[1][3]) ** 2
 		
-		cost_ = 1000 * lamda_1 + 500 * lamda_2 + 200 * cost_dist + 10 * self.job * cost_xy
+		cost_ = 1000 * lamda_1 + 500 * lamda_2 + 200 * cost_dist + 100 * self.job * cost_xy
 		
 		cost = np.sum(cost_) 
 		
@@ -238,11 +238,13 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(-0, 5, 0.0, 5, 1)
+	myRobot = ModelPredictiveControl(5.2, -2.2, 0.0, 5, 0.7)
 	u = np.zeros(2*myRobot.horizon)
 		
 	mode = "multi"
+	dist_goal = 1000
 	while not rospy.is_shutdown():
+		
 		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
 		res_x = abs(state[0]- myRobot.goal[0])
 		res_y = abs(state[1]- myRobot.goal[1])
@@ -261,6 +263,7 @@ if __name__ == '__main__':
 			myRobot.v_optimal = u[0]
 			myRobot.psidot_optimal = u[myRobot.horizon]		
 			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
+		
 		
 		if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
 				print("Mean optimization Time: ", myRobot.te/myRobot.loop)

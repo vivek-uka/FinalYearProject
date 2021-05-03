@@ -195,7 +195,7 @@
         <pose frame=''>-1.634682 -7.811813 -0.319559 0 0 0</pose>
 	</model>
                                                  
-      <model name='aws_robomaker_warehouse_TrashCanC_01_002'>
+      <!-- <model name='aws_robomaker_warehouse_TrashCanC_01_002'>
         <include>
             <uri>model://aws_robomaker_warehouse_TrashCanC_01</uri>
         </include>
@@ -208,7 +208,7 @@
             <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
         </include>
         <pose frame=''>-0.276098 -9.481944 0.023266 0 0 0</pose>
-	</model>
+	</model> -->
 
     	
     <light name="Warehouse_CeilingLight_003" type="point">

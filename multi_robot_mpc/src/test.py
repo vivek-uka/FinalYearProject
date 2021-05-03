@@ -1,51 +1,15 @@
-from gekko import GEKKO
+import matplotlib.pyplot as plt
 
-# Initialize Model
-m = GEKKO(remote=True)
+shelfx = [4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08, -5.79, 0]
+shelfy = [-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7, -0.95, 0]
+shelfa = [3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42, 14]
+shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18, 21.5] 
+text = ['Shelf0', 'Shelf1', 'Shelf2', 'Shelf3', 'Shelf4', 'Shelf5', 'Block0', 'Block1', 'Block2', 'Block3', '']
+plt.figure(1)
+for i in range(len(shelfx)):
+    plt.plot([shelfx[i] + shelfa[i]/2, shelfx[i] + shelfa[i]/2, shelfx[i] - shelfa[i]/2, shelfx[i] - shelfa[i]/2, shelfx[i] + shelfa[i]/2], [shelfy[i] + shelfb[i]/2, shelfy[i]-shelfb[i]/2, shelfy[i]-shelfb[i]/2, shelfy[i]+shelfb[i]/2, shelfy[i]+shelfb[i]/2])
+    plt.text(shelfx[i], shelfy[i], text[i], horizontalalignment='center',verticalalignment='center')        
 
-#help(m)
-
-#define parameter
-eq = m.Param(value=40)
-
-#initialize variables
-x1,x2,x3,x4 = [m.Var() for i in range(4)]
-
-#initial values
-x1.value = 1
-x2.value = 5
-x3.value = 5
-x4.value = 1
-
-#lower bounds
-x1.lower = 1
-x2.lower = 1
-x3.lower = 1
-x4.lower = 1
-
-#upper bounds
-x1.upper = 5
-x2.upper = 5
-x3.upper = 5
-x4.upper = 5
-
-#Equations
-m.Equation(x1*x2*x3*x4>=25)
-m.Equation(x1**2+x2**2+x3**2+x4**2==eq)
-
-#Objective
-m.Obj(x1*x4*(x1+x2+x3)+x3)
-
-#Set global options
-m.options.IMODE = 3 #steady state optimization
-
-#Solve simulation
-m.solve() # solve on public server
-
-#Results
-print('')
-print('Results')
-print('x1: ' + str(x1.value))
-print('x2: ' + str(x2.value))
-print('x3: ' + str(x3.value))
-print('x4: ' + str(x4.value))
+plt.xlabel('x in m')
+plt.ylabel('y in m')
+plt.show()

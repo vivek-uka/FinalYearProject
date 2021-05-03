@@ -36,7 +36,7 @@ states_y3 = []
 states_psi3 = []
 
 v0 = wz0 = v1 = wz1 = v2 = wz2 = v3 = wz3 = 0.0
-goal0 = [3.1, 2.1, 0]
+goal0 = [5.2, -2.2, 0]
 goal1 = [0, 5, 0.0]
 goal2= [-4, -3, -np.pi/4]
 goal3 = [1.7, -4, -np.pi/4]
