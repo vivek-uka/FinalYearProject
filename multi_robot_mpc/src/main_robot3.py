@@ -10,8 +10,8 @@ from multi_robot_mpc.msg import States
 
 
 state = [0.5, -0.866025, 1.57]
-init = [0, -0.5, 1.57]
-
+init = [0, -0.5, 0]
+state = init
 states_x1 = []
 states_y1 = []
 states_psi1 = []
@@ -35,9 +35,9 @@ class ModelPredictiveControl:
 
 	def __init__(self, x_g, y_g, psi_g, angular_max, linear_max):
 
-		self.horizon = 5
+		self.horizon = 10
 		self.control = 1
-		self.dt = 0.5
+		self.dt = 0.25
 		self.psidot_max = angular_max
 		self.v_max = linear_max
 		self.goal = [x_g, y_g]	
@@ -54,10 +54,10 @@ class ModelPredictiveControl:
 		self.obsy = [-1.5, -0.36, -0.36, -0.8, -1.5]#[0.5, 1.5, 1.5, 0.5, 1]
 		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
 		self.rr = 0.35
-		l = 0.667#square config b(0.1825) l(0.26) divided bt 2
+		l = 1#square config b(0.1825) l(0.26) divided bt 2
 		self.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 
-	def optimize(self, state, u, mode,steps=25, lr=0.001, decay=0.9, eps=1e-8):
+	def optimize(self, state, u, mode,steps=12, lr=0.01, decay=0.9, eps=1e-8):
 
 		dx_mean_sqr = np.zeros(self.horizon*2)
 
@@ -109,7 +109,7 @@ class ModelPredictiveControl:
 
 		cost_dist = (np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2) - self.config_matrix[3][1]) ** 2 + (np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2) - self.config_matrix[3][2]) ** 2 + (np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2) - self.config_matrix[3][0]) ** 2 
 		cost_psi = (psi - states_psi1) ** 2
-		cost_ = 1000 * lamda_1 + 500 * lamda_2 + 100 * cost_dist + 15 * cost_psi + 25 * self.job * cost_xy 
+		cost_ = 1000 * lamda_1 + 500 * lamda_2 + 450 * cost_dist + 5 * cost_psi + 15 * cost_psi[-1]+ 10 * self.job * cost_xy 
 		
 		cost = np.sum(cost_) 
 		
@@ -174,6 +174,8 @@ def statesCallback1(data):
 	states_y1 = data.y
 	states_psi1 = data.psi
 	rx1 = 1
+	l = data.l
+	myRobot.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 
 def statesCallback2(data):
 	global states_x2, states_y2, states_psi2, rx2
@@ -209,9 +211,9 @@ def odomCallback(data):
 	elif psi < -np.pi:
 		psi = psi + 2 * np.pi
 
-	state[0] = x + init[0]
-	state[1] = y + init[1]
-	state[2] = psi
+	# state[0] = x + init[0]
+	# state[1] = y + init[1]
+	# state[2] = psi
 	
 	if rx3 == 5:
 		rx3 = 1
@@ -251,8 +253,9 @@ if __name__ == '__main__':
 			rx3 = 0.0				
 			u = myRobot.optimize(state, u, mode)		
 			myRobot.v_optimal = u[0]
-			myRobot.psidot_optimal = u[myRobot.horizon]		
-			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
+			myRobot.psidot_optimal = u[myRobot.horizon]
+			state = [myRobot.pre_states.x[0], myRobot.pre_states.y[0], myRobot.pre_states.psi[0]]		
+			# pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
 
 		if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
 				print("Mean optimization Time: ", myRobot.te/myRobot.loop)	

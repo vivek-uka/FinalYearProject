@@ -10,7 +10,8 @@ from multi_robot_mpc.msg import States
 
 
 state = [0.5, 0, 1.57]
-init = [0.46, 0, 1.57]
+init = [0.5, 0.0, 0]
+state = init
 states_x1 = []
 states_y1 = []
 states_psi1 = []
@@ -34,9 +35,9 @@ class ModelPredictiveControl:
 
 	def __init__(self, x_g, y_g, psi_g, angular_max, linear_max):
 
-		self.horizon = 5
+		self.horizon = 10
 		self.control = 1
-		self.dt = 0.5
+		self.dt = 0.25
 		self.psidot_max = angular_max
 		self.v_max = linear_max
 		self.goal = [x_g, y_g]	
@@ -53,11 +54,19 @@ class ModelPredictiveControl:
 		self.obsy = [0.5, 0.51, -2.27, -0.8, -2.2]#[0.5, 1.5, 1.5, 0.5, 1]
 		self.r = [0.2 * np.sqrt(2)/2, 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2), 0.2 * np.sqrt(2)]
 		self.rr = 0.35
-
-		l = 0.667#square config
+		self.wayX = [1.76, x_g]
+		self.wayY = [-3.8, y_g]
+		self.wayPsi = [ 0.0, 0.0]
+		self.goal = [self.wayX[0], self.wayY[0]]
+		self.psi_terminal = self.wayPsi[0]
+		l = 1#square config
 		self.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
+		self.shelfx = [4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08, -5.79, 0]
+		self.shelfy = [-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7, -0.95, 0]
+		self.shelfa = [3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42, 14]
+ 		self.shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18, 21.5]
 
-	def optimize(self, state, u, mode,steps=25, lr=0.001, decay=0.9, eps=1e-8):
+	def optimize(self, state, u, mode,steps=12, lr=0.01, decay=0.9, eps=1e-8):
 
 		dx_mean_sqr = np.zeros(self.horizon*2)
 
@@ -108,7 +117,7 @@ class ModelPredictiveControl:
 		cost_psi = (psi - states_psi1) ** 2
 		
 		
-		cost_ = 1000 * lamda_1 + 500 * lamda_2 + 100 * cost_dist + 15 * cost_psi + 10 * self.job * cost_xy
+		cost_ = 1000 * lamda_1 + 500 * lamda_2 + 450 * cost_dist + 5 * cost_psi + 15 * cost_psi[-1]+ 10 * self.job * cost_xy 
 		
 		cost = np.sum(cost_) 
 		
@@ -135,10 +144,13 @@ class ModelPredictiveControl:
 		self.pre_states.y0 = state[1]
 		self.pre_states.psi0 = state[2]
 
-		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
+		lamda_1 = np.maximum(np.zeros(self.horizon), -0*self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
 		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2
-		#cost_xy_terminal = (rn[-1] - self.goal[0]) ** 2 + (re[-1] - self.goal[1]) ** 2 	
+		lamda_shelf = np.array([np.maximum(np.zeros(self.horizon), 1 - ((((rn - self.shelfx[i])/(self.shelfa[i]/2 + self.rr))**10 + (((re - self.shelfy[i])/(self.shelfb[i]/2 + self.rr))**10)))) for i in range(len(self.shelfx)-1)], dtype=float)
+		lamda_w1 = np.maximum(np.zeros(self.horizon), self.shelfa[-1]/2 - rn) + np.maximum(np.zeros(self.horizon), rn - self.shelfa[-1]/2) 
+		lamda_w2 = np.maximum(np.zeros(self.horizon), self.shelfb[-1]/2 - re) + np.maximum(np.zeros(self.horizon), re - self.shelfb[-1]/2) 
+		lamda_shelf = np.sum(lamda_shelf, axis = 0)	
 		cost_smoothness_a = (np.hstack((u[0] - self.v_optimal, np.diff(u[0:self.horizon])))/self.dt) ** 2
 		cost_smoothness_w = (np.hstack((u[self.horizon] - self.psidot_optimal, np.diff(u[self.horizon:])))/self.dt)**2
 		cost_psi = (psi - self.psi_terminal) ** 2
@@ -146,17 +158,21 @@ class ModelPredictiveControl:
 
 		dist_robot1 = np.sqrt((states_x1 - rn) ** 2 + (states_y1 - re) ** 2)
 		dist_robot0 = np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2)
-		dist_robot3 = np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2)
-		cost_robot_obs1 = (1 / dist_robot1) * ((self.rr + 0.5 - dist_robot1)/(abs(self.rr + 0.5 - dist_robot1)+0.000000000001) + 1)
-		cost_robot_obs0 = (1 / dist_robot0) * ((self.rr + 0.5 - dist_robot0)/(abs(self.rr + 0.5 - dist_robot0)+0.000000000001) + 1)
-		cost_robot_obs3 = (1 / dist_robot3) * ((self.rr + 0.5 - dist_robot3)/(abs(self.rr + 0.5 - dist_robot3)+0.000000000001) + 1)
-		cost_robot_obs = cost_robot_obs1 + cost_robot_obs0 + cost_robot_obs3
+		# dist_robot3 = np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2)
+		# cost_robot_obs1 = (1 / dist_robot1) * ((self.rr + 0.5 - dist_robot1)/(abs(self.rr + 0.5 - dist_robot1)+0.000000000001) + 1)
+		# cost_robot_obs0 = (1 / dist_robot0) * ((self.rr + 0.5 - dist_robot0)/(abs(self.rr + 0.5 - dist_robot0)+0.000000000001) + 1)
+		cost_robot_obs1 = np.maximum(np.zeros(self.horizon), -dist_robot1 + 2*self.rr+0.01)
+		cost_robot_obs0 = np.maximum(np.zeros(self.horizon), -dist_robot0 + 2*self.rr+0.01) 
+		# cost_robot_obs3 = (1 / dist_robot3) * ((self.rr + 0.5 - dist_robot3)/(abs(self.rr + 0.5 - dist_robot3)+0.000000000001) + 1)
+		cost_robot_obs = cost_robot_obs1 + cost_robot_obs0# + cost_robot_obs3
 
-		dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
-		cost_obs = ((self.r[0] + self.rr + 0.25 - dist_obs)/(abs(self.r[0] + self.rr + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
-		cost_obs = np.sum(cost_obs, axis=0)
+		# dist_obs = np.array([np.sqrt((rn - np.array(self.obsx[i])) ** 2 + (re - np.array(self.obsy[i])) ** 2) for i in range(len(self.obsx))], dtype=float)
+		# cost_obs = ((self.r[0] + self.rr + 0.25 - dist_obs)/(abs(self.r[0] + self.rr + 0.25 - dist_obs)+0.000000000000001) + 1) * (1/dist_obs)
+		# cost_obs = np.sum(cost_obs, axis=0)
 
-		cost_ = 700 * lamda_1 + 700 * lamda_2 + 20 * cost_xy + 80 * cost_xy[-1] + 2 * cost_psi[-1] + (cost_smoothness_a + cost_smoothness_w) + 200 * cost_obs + 200 * cost_robot_obs 
+		cost_ = 100000 * lamda_1 + 250 * lamda_2 + 10000 * (lamda_shelf) + \
+				20 * cost_xy + 500 * cost_xy[-1] +  0 * cost_psi + 0 * cost_psi[-1] + \
+				1 * cost_smoothness_a + 1 * cost_smoothness_w + 1000 * cost_robot_obs 
 		cost = np.sum(cost_) 
 
 		return cost
@@ -177,6 +193,9 @@ def statesCallback1(data):
 	states_y1 = data.y
 	states_psi1 = data.psi
 	rx1 = 1
+	l = data.l
+	myRobot.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
+
 
 def statesCallback3(data):
 	global states_x3, states_y3, states_psi3, rx3
@@ -212,9 +231,9 @@ def odomCallback(data):
 	elif psi < -np.pi:
 		psi = psi + 2 * np.pi
 
-	state[0] = x + init[0]
-	state[1] = y + init[1]
-	state[2] = psi
+	# state[0] = x + init[0]
+	# state[1] = y + init[1]
+	# state[2] = psi
 	
 
 	if rx2 == 5:
@@ -235,11 +254,23 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(-4, -3, -np.pi/4, 5, 1)
+	myRobot = ModelPredictiveControl(1.76, 2.5, 0.0, 5, 1)
 	u = np.zeros(2*myRobot.horizon)
-		
+	dist_goal = 1000
+	cnt = 1	
 	mode = "multi"
 	while not rospy.is_shutdown():
+		if dist_goal <= 0.5:
+			if cnt < len(myRobot.wayX):
+				myRobot.goal[0]= myRobot.wayX[cnt]
+				myRobot.goal[1]= myRobot.wayY[cnt]
+				myRobot.psi_terminal= myRobot.wayPsi[cnt]
+				u = np.zeros(2*myRobot.horizon)
+			else:
+				if dist_goal <= 0.1:
+					pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
+					break
+			cnt+=1
 		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
 		res_x = abs(state[0]- myRobot.goal[0])
 		res_y = abs(state[1]- myRobot.goal[1])
@@ -251,13 +282,17 @@ if __name__ == '__main__':
 			myRobot.pre_states.psi = np.full(myRobot.horizon, state[2])
 			myRobot.pub2.publish(myRobot.pre_states)
 
-		if (rx1 and rx0 and rx3):# or mode == "solo":
+		if rx1 and rx0 and rx3 or mode == "solo":
 			rx2 = 0.0				
 			u = myRobot.optimize(state, u, mode)			
 			myRobot.v_optimal = u[0]
 			myRobot.psidot_optimal = u[myRobot.horizon]	
-			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
-
+			#pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
+			state = [myRobot.pre_states.x[0], myRobot.pre_states.y[0], myRobot.pre_states.psi[0]]
+			if state[2] > np.pi:
+				state[2] = state[2] - 2 * np.pi
+			elif state[2] < -np.pi:
+				state[2] = state[2] + 2 * np.pi
 		if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
 				print("Mean optimization Time: ", myRobot.te/myRobot.loop)	
 		rate.sleep()

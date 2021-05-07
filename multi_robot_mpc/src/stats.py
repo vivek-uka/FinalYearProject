@@ -11,6 +11,7 @@ rx1 = 0
 rx2 = 0
 rx3 = 0
 
+l = 0
 state0 = [0, 0, 0]
 init0 = [-4, -3, 1.57]
 states_x0 = []
@@ -37,8 +38,8 @@ states_psi3 = []
 
 v0 = wz0 = v1 = wz1 = v2 = wz2 = v3 = wz3 = 0.0
 goal0 = [5.2, -2.2, 0]
-goal1 = [0, 5, 0.0]
-goal2= [-4, -3, -np.pi/4]
+goal1 = [15, 0, 0]#[5.2, -3.8, 0.0]
+goal2= [1.7, 2.5, 0]
 goal3 = [1.7, -4, -np.pi/4]
 
 obsx = [-2.5, 0.34, 0.34, -1, -2.4]#[-1.7, -0.36, -1.7, -1, -0.36] #[-6, -6, -5, -5, -5.5] 
@@ -63,7 +64,7 @@ def statesCallback0(data):
 	rx0 += 1
 
 def statesCallback1(data):
-	global states_x1, states_y1, states_psi1, rx1, state1
+	global states_x1, states_y1, states_psi1, rx1, state1, l
 
 	states_x1 = data.x
 	states_y1 = data.y
@@ -73,7 +74,7 @@ def statesCallback1(data):
 	state1[1] = data.y0
 	state1[2] = data.psi0
 	rx1 += 1
-	
+	l = data.l
 
 def statesCallback2(data):
 	global states_x2, states_y2, states_psi2, rx2, state2
@@ -215,13 +216,12 @@ if __name__ == '__main__':
 	trajx3 = []
 	trajy3 = []
 	t = time()
-	l = (0.5+0.1825*2)*np.sqrt(2)/2
-	config_matrix = [[0, l, 2*l/np.sqrt(2), l], 
-						  [l, 0, l, 2*l/np.sqrt(2)], 
-						  [2*l/np.sqrt(2), l, 0, l],
-						  [l, 2*l/np.sqrt(2), l, 0]]
+	l = 1
+	squarex = []
+	squarey = []
+	config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 	while not rospy.is_shutdown():
-		if rx0 >= 5:
+		"""if rx0 >= 5 and rx1 >=5 and rx2 >= 5:
 			iter += 1
 			r = 0.2 * np.sqrt(2)/ 2+0.32
 			dist_goal = np.sqrt((goal0[0] - state0[0]) ** 2 + (goal0[1] - state0[1]) ** 2)
@@ -237,18 +237,30 @@ if __name__ == '__main__':
 			# dist_obs3.append(np.sqrt((state0[0] - obsx[3]) ** 2 + (state0[1] - obsy[3]) ** 2) - r)
 			# dist_obs4.append(np.sqrt((state0[0] - obsx[4]) ** 2 + (state0[1] - obsy[4]) ** 2) - r)
 			# print(round(simulation_psi_residue0[-1], 2), round(simulation_x_residue0[-1], 2), round(simulation_y_residue0[-1], 2))
+			dist_01.append(abs(dist(state0[0], state0[1], state1[0], state1[1]) - 0.7))
+			dist_02.append(abs(dist(state0[0], state0[1], state2[0], state2[1]) - 0.7))
+			dist_03.append(abs(dist(state0[0], state0[1], state3[0], state3[1]) - 0.7))
+			dist_12.append(abs(dist(state1[0], state1[1], state2[0], state2[1]) - 0.7))
 			if simulation_x_residue0[-1] < 0.01 and simulation_y_residue0[-1] < 0.01 and simulation_psi_residue0[-1] < 0.01:
 				break
-			# if time() - t >= 30:
-			# 	break
+			if time() - t >= 30:
+				break
 			plt.clf()
 			ax1 = fig.add_subplot(1, 1, 1)
 			ax1.set_aspect(1)
 			
 			trajx0.append(state0[0])
 			trajy0.append(state0[1])
-			plt.plot(trajx0, trajy0, color='black')
+			trajx1.append(state1[0])
+			trajy1.append(state1[1])
+			trajx2.append(state2[0])
+			trajy2.append(state2[1])
+			plt.plot(trajx0, trajy0, color='red')
+			plt.plot(trajx1, trajy1, color='blue')
+			plt.plot(trajx2, trajy2, color='green')
 			circle5 = (plt.Circle((state0[0], state0[1]), 0.32, color='orange', fill=False))
+			circle6 = (plt.Circle((state1[0], state1[1]), 0.32, color='orange', fill=False))
+			circle7 = (plt.Circle((state2[0], state2[1]), 0.32, color='orange', fill=False))
 
 			circle0 = (plt.Circle((obsx[0], obsy[0]), r, color='orange', fill=False))
 			circle1 = (plt.Circle((obsx[1], obsy[1]), r, color='orange', fill=False))
@@ -272,21 +284,30 @@ if __name__ == '__main__':
 			# ax1.add_artist(circle3)
 			# ax1.add_artist(circle4)
 			ax1.add_artist(circle5)
-			# ax1.add_artist(circle6)
-			# ax1.add_artist(circle7)
+			ax1.add_artist(circle6)
+			ax1.add_artist(circle7)
 			# ax1.add_artist(circle8)
 			# ax1.add_artist(circle9)
 				
 			plt.xlim(-10, 10)
 			plt.ylim(-10, 10)
-			plt.scatter(state0[0], state0[1], linewidths=0.05)
-			plt.scatter(goal0[0], goal0[1], linewidths=0.05, color='green')
-			plt.plot(states_x0, states_y0, linestyle=':',color='red')
+			plt.scatter(state0[0], state0[1], linewidths=0.05, color='red')
+			plt.scatter(state1[0], state1[1], linewidths=0.05, color='blue')
+			plt.scatter(state2[0], state2[1], linewidths=0.05, color='green')
+			plt.scatter(goal0[0], goal0[1], linewidths=0.05, color='red')
+			plt.scatter(goal1[0], goal1[1], linewidths=0.05, color='blue')
+			plt.scatter(goal2[0], goal2[1], linewidths=0.05, color='green')
+			plt.xlabel('x')
+			plt.ylabel('y')
+			plt.plot(states_x0, states_y0, linestyle=':',color='black')
+			plt.plot(states_x1, states_y1, linestyle=':',color='black')
+			plt.plot(states_x2, states_y2, linestyle=':',color='black')
 			#plt.title('Obstacle avoidance')
 			plt.draw()
-			plt.pause(0.000001)
+			plt.pause(0.000001)"""
 
-		"""if rx0 >= 5 and rx1 >= 5 and rx2 >= 5 and rx3 >= 5:
+		if rx0 >= 5 and rx1 >= 5 and rx2 >= 5 and rx3 >= 5:
+			config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 			plt.clf()
 			iter+=1
 			simulation_time.append(iter * 1/freq)
@@ -299,25 +320,35 @@ if __name__ == '__main__':
 			dist_23.append(abs(dist(state2[0], state2[1], state3[0], state3[1]) - config_matrix[2][3]))
 
 			plt.plot([state0[0], state1[0], state2[0], state3[0], state0[0]], [state0[1], state1[1], state2[1], state3[1], state0[1]], linestyle ='dotted')
+			
+			for i in range(len(squarex)):
+				plt.plot(squarex[i], squarey[i], color='blue')
+			if iter % 5 == 0:
+				squarex.append([state0[0], state1[0], state2[0], state3[0], state0[0]])
+				squarey.append([state0[1], state1[1], state2[1], state3[1], state0[1]])
+			
 			plt.scatter(state0[0], state0[1], linewidths=0.05, color='red')
 			plt.scatter(state1[0], state1[1], linewidths=0.05, color='green')
 			plt.scatter(state2[0], state2[1], linewidths=0.05, color='blue')
 			plt.scatter(state3[0], state3[1], linewidths=0.05, color='orange')
 			plt.scatter(goal1[0], goal1[1], linewidths=0.05, color='black')
+			# plt.scatter(5, 0, linewidths=0.05, color='black')
+			# plt.text(10, 0, 'P2')
+			# plt.text(5, 0, 'P1')
 			plt.plot(states_x0, states_y0, linestyle=':',color='black')
 			plt.plot(states_x1, states_y1, linestyle=':',color='black')
 			plt.plot(states_x2, states_y2, linestyle=':',color='black')
 			plt.plot(states_x3, states_y3, linestyle=':',color='black')
 			ax1.set_aspect(1)
-			if(dist_goal < 0.5):
+			if(dist_goal < 0.1):
 				break
 			plt.xlabel('x')
 			plt.ylabel('y')
-			plt.xlim(-5, 5)
-			plt.ylim(-5, 5)
+			plt.xlim(-2, 17)
+			plt.ylim(-2, 17)
 			plt.draw()
 			plt.pause(0.000001)
-			print(round(dist_01[-1], 3), round(dist_02[-1], 3), round(dist_03[-1], 3), round(dist_12[-1], 3), round(dist_13[-1], 3), round(dist_23[-1], 3))"""
+			print(round(dist_01[-1], 3), round(dist_02[-1], 3), round(dist_03[-1], 3), round(dist_12[-1], 3), round(dist_13[-1], 3), round(dist_23[-1], 3))
 		"""if rx0 >= 5 and rx1 >= 5 and rx2 >=5 and rx3 >=5:
 			plt.clf()
 			ax1 = fig.add_subplot(1, 1, 1)
@@ -453,15 +484,16 @@ if __name__ == '__main__':
 	psidot_max = 5
 
 	# print(round(np.mean(dist_01), 3), round(np.mean(dist_02), 3), round(np.mean(dist_03), 3), round(np.mean(dist_12), 3), round(np.mean(dist_13), 3), round(np.mean(dist_23), 3))
-	# plt.figure(5)
-	# plt.title('distance_error')
-	# plt.plot(simulation_time, dist_01)
-	# plt.plot(simulation_time, dist_02)
-	# plt.plot(simulation_time, dist_03)
-	# plt.plot(simulation_time, dist_12)
-	# plt.plot(simulation_time, dist_13)
-	# plt.plot(simulation_time, dist_23)
-	# plt.legend(["dist_01", "dist_02", "dist_03", "dist_12", "dist_13", "dist_23"])
+	plt.figure(5)
+	plt.title('Distance_robots')
+	plt.plot(simulation_time, dist_01)
+	plt.plot(simulation_time, dist_02)
+	plt.plot(simulation_time, dist_03)
+	plt.plot(simulation_time, dist_12)
+	plt.plot([simulation_time[-1], 0], [0, 0])
+	plt.plot(simulation_time, dist_13)
+	plt.plot(simulation_time, dist_23)
+	plt.legend(["dist_01", "dist_02","dist_03", "dist_12", "dist_13", "dist_23"])
 	
 	# plt.figure(5)
 	# plt.title('residue_goal')
@@ -542,6 +574,8 @@ if __name__ == '__main__':
 	# plt.plot(simulation_time, dist3_obs4)
 	# plt.plot([0, simulation_time[-1]], [0, 0])
 	# plt.legend(["dist_obs0", "dist_obs1", "dist_obs2", "dist_obs3", "dist_obs4"])
+	plt.xlabel('time')
+	plt.ylabel('value')
 	plt.show()
 	rospy.spin()
 
