@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 state = [2.5, -2.1, 1.57]
-init = [-0.25, 0, 0]#[-3.8, -9.7, 1.57]
+init = [-0.5, 0, 0]#[-3.8, -9.7, 1.57]
 state = init
 states_x1 = []
 states_y1 = []

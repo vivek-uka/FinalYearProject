@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 state = [0.5, 0.866025, 1.57]
-init = [0.5, 0.5, 0]
+init = [0.0, 0.5, 0]
 state = init
 states_x0 = []
 states_y0 = []
@@ -110,13 +110,13 @@ class ModelPredictiveControl:
 		self.pre_states.y0 = state[1]
 		self.pre_states.psi0 = state[2]
 		
-		lamda_1 = np.maximum(np.zeros(self.horizon), -0.0*self.v_max - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
+		lamda_1 = np.maximum(np.zeros(self.horizon), -self.v_max*0.0 - u[:self.horizon]) + np.maximum(np.zeros(self.horizon), u[:self.horizon] - self.v_max) 
 		lamda_2 = np.maximum(np.zeros(self.horizon), -self.psidot_max - u[self.horizon:]) + np.maximum(np.zeros(self.horizon), u[self.horizon:] - self.psidot_max) 
 		cost_xy = (rn - self.goal[0]) ** 2 + (re - self.goal[1]) ** 2 
 		
 		cost_dist = (np.sqrt((states_x0 - rn) ** 2 + (states_y0 - re) ** 2) - self.config_matrix[0][1]) ** 2 + (np.sqrt((states_x2 - rn) ** 2 + (states_y2 - re) ** 2) - self.config_matrix[1][2]) ** 2 + (np.sqrt((states_x3 - rn) ** 2 + (states_y3 - re) ** 2) - self.config_matrix[1][3]) ** 2
 		
-		cost_ = 1000 * lamda_1 + 500 * lamda_2 + 450 * cost_dist + 20 * self.job * cost_xy + 5 * self.job * cost_xy[-1]
+		cost_ = 10000 * lamda_1 + 500 * lamda_2 + 450 * cost_dist + 10 * self.job * cost_xy + 5 * self.job * cost_xy[-1]
 		
 		cost = np.sum(cost_) 
 		
@@ -254,7 +254,7 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(15, 0, 0.0, 5, 1)
+	myRobot = ModelPredictiveControl(15, 0, 0.0, 5, 0.5)
 	u = np.zeros(2*myRobot.horizon)
 		
 	mode = "multi"
@@ -311,7 +311,7 @@ if __name__ == '__main__':
 				state[2] = state[2] - 2 * np.pi
 			elif state[2] < -np.pi:
 				state[2] = state[2] + 2 * np.pi
-		
+			
 		if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
 				print("Mean optimization Time: ", myRobot.te/myRobot.loop)
 		rate.sleep()

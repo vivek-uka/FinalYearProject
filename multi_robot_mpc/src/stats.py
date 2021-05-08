@@ -38,17 +38,17 @@ states_psi3 = []
 
 v0 = wz0 = v1 = wz1 = v2 = wz2 = v3 = wz3 = 0.0
 goal0 = [5.2, -2.2, 0]
-goal1 = [15, 0, 0]#[5.2, -3.8, 0.0]
+goal1 = [13, 0, 0]#[5.2, -3.8, 0.0]
 goal2= [1.7, 2.5, 0]
 goal3 = [1.7, -4, -np.pi/4]
 
 obsx = [-2.5, 0.34, 0.34, -1, -2.4]#[-1.7, -0.36, -1.7, -1, -0.36] #[-6, -6, -5, -5, -5.5] 
 obsy = [0.5, 0.51, -2.27, -0.8, -2.2]#[-1.5, -0.36, -0.36, -0.8, -1.5] #[0.5, 1.5, 1.5, 0.5, 1]
 
-shelfx = [4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08, -5.79]
-shelfy = [-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7, -0.95]
-shelfa = [3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42]
-shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18] 
+shelfx = [7.5, 7.5]#[4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08, -5.79]
+shelfy = [1.2, -1.3]#[-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7, -0.95]
+shelfa = [4, 4]#[3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42]
+shelfb = [1.5, 1.0]#[0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18] 
 
 def statesCallback0(data):
 	global states_x0, states_y0, states_psi0, rx0, state0, init0
@@ -320,7 +320,6 @@ if __name__ == '__main__':
 			dist_23.append(abs(dist(state2[0], state2[1], state3[0], state3[1]) - config_matrix[2][3]))
 
 			plt.plot([state0[0], state1[0], state2[0], state3[0], state0[0]], [state0[1], state1[1], state2[1], state3[1], state0[1]], linestyle ='dotted')
-			
 			for i in range(len(squarex)):
 				plt.plot(squarex[i], squarey[i], color='blue')
 			if iter % 5 == 0:
@@ -331,7 +330,9 @@ if __name__ == '__main__':
 			plt.scatter(state1[0], state1[1], linewidths=0.05, color='green')
 			plt.scatter(state2[0], state2[1], linewidths=0.05, color='blue')
 			plt.scatter(state3[0], state3[1], linewidths=0.05, color='orange')
-			plt.scatter(goal1[0], goal1[1], linewidths=0.05, color='black')
+			plt.scatter(goal1[0]+2, goal1[1], linewidths=0.05, color='black')
+			for i in range(len(shelfx)):
+				plt.plot([shelfx[i] + shelfa[i]/2, shelfx[i] + shelfa[i]/2, shelfx[i] - shelfa[i]/2, shelfx[i] - shelfa[i]/2, shelfx[i] + shelfa[i]/2], [shelfy[i] + shelfb[i]/2, shelfy[i]-shelfb[i]/2, shelfy[i]-shelfb[i]/2, shelfy[i]+shelfb[i]/2, shelfy[i]+shelfb[i]/2])
 			# plt.scatter(5, 0, linewidths=0.05, color='black')
 			# plt.text(10, 0, 'P2')
 			# plt.text(5, 0, 'P1')
@@ -576,6 +577,12 @@ if __name__ == '__main__':
 	# plt.legend(["dist_obs0", "dist_obs1", "dist_obs2", "dist_obs3", "dist_obs4"])
 	plt.xlabel('time')
 	plt.ylabel('value')
+	np.savetxt("/home/vivek/catkin_ws/src/multi_robot_mpc/results/dist_01.txt", np.asarray(dist_01), delimiter='\n')
+	np.savetxt("/home/vivek/catkin_ws/src/multi_robot_mpc/results/dist_02.txt", np.asarray(dist_02), delimiter='\n')
+	np.savetxt("/home/vivek/catkin_ws/src/multi_robot_mpc/results/dist_03.txt", np.asarray(dist_03), delimiter='\n')
+	np.savetxt("/home/vivek/catkin_ws/src/multi_robot_mpc/results/dist_12.txt", np.asarray(dist_12), delimiter='\n')
+	np.savetxt("/home/vivek/catkin_ws/src/multi_robot_mpc/results/dist_13.txt", np.asarray(dist_13), delimiter='\n')
+	np.savetxt("/home/vivek/catkin_ws/src/multi_robot_mpc/results/dist_23.txt", np.asarray(dist_23), delimiter='\n')
 	plt.show()
 	rospy.spin()
 
