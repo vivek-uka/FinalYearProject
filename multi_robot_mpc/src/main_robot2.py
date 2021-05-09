@@ -10,8 +10,8 @@ from multi_robot_mpc.msg import States
 
 
 state = [0.5, 0, 1.57]
-init = [0.5, 0.0, 0]
-state = init
+init = [1, 0.0, 1.57]
+# state = init
 states_x1 = []
 states_y1 = []
 states_psi1 = []
@@ -66,7 +66,7 @@ class ModelPredictiveControl:
 		self.shelfa = [3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42, 14]
  		self.shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18, 21.5]
 
-	def optimize(self, state, u, mode,steps=12, lr=0.01, decay=0.9, eps=1e-8):
+	def optimize(self, state, u, mode,steps=12, lr=0.005, decay=0.9, eps=1e-8):
 
 		dx_mean_sqr = np.zeros(self.horizon*2)
 
@@ -117,7 +117,7 @@ class ModelPredictiveControl:
 		cost_psi = (psi - states_psi1) ** 2
 		
 		
-		cost_ = 1000 * lamda_1 + 500 * lamda_2 + 450 * cost_dist + 5 * cost_psi + 15 * cost_psi[-1]+ 10 * self.job * cost_xy 
+		cost_ = 10000 * lamda_1 + 500 * lamda_2 + 450 * cost_dist + 5 * cost_psi + 15 * cost_psi[-1]+ 10 * self.job * cost_xy 
 		
 		cost = np.sum(cost_) 
 		
@@ -231,9 +231,9 @@ def odomCallback(data):
 	elif psi < -np.pi:
 		psi = psi + 2 * np.pi
 
-	# state[0] = x + init[0]
-	# state[1] = y + init[1]
-	# state[2] = psi
+	state[0] = x + init[0]
+	state[1] = y + init[1]
+	state[2] = psi
 	
 
 	if rx2 == 5:
@@ -287,12 +287,7 @@ if __name__ == '__main__':
 			u = myRobot.optimize(state, u, mode)			
 			myRobot.v_optimal = u[0]
 			myRobot.psidot_optimal = u[myRobot.horizon]	
-			#pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
-			state = [myRobot.pre_states.x[0], myRobot.pre_states.y[0], myRobot.pre_states.psi[0]]
-			if state[2] > np.pi:
-				state[2] = state[2] - 2 * np.pi
-			elif state[2] < -np.pi:
-				state[2] = state[2] + 2 * np.pi
+			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
 		if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
 				print("Mean optimization Time: ", myRobot.te/myRobot.loop)	
 		rate.sleep()

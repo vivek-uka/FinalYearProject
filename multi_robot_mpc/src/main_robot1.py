@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 
 
 state = [0.5, 0.866025, 1.57]
-init = [0.0, 0.5, 0]
-state = init
+init = [0.0, 1, 1.57]
+# state = init
 states_x0 = []
 states_y0 = []
 states_psi0 = []
@@ -66,7 +66,7 @@ class ModelPredictiveControl:
 		self.shelfa = [3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42, 14]
  		self.shelfb = [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18, 21.5]
 
-	def optimize(self, state, u, mode,steps=12, lr=0.01, decay=0.9, eps=1e-8):
+	def optimize(self, state, u, mode,steps=12, lr=0.005, decay=0.9, eps=1e-8):
 
 		dx_mean_sqr = np.zeros(self.horizon*2)
 
@@ -230,9 +230,9 @@ def odomCallback(data):
 	elif psi < -np.pi:
 		psi = psi + 2 * np.pi
 
-	# state[0] = x + init[0]
-	# state[1] = y + init[1]
-	# state[2] = psi
+	state[0] = x + init[0]
+	state[1] = y + init[1]
+	state[2] = psi
 	
 	
 
@@ -254,25 +254,13 @@ if __name__ == '__main__':
 
 	rate = rospy.Rate(freq)
 
-	myRobot = ModelPredictiveControl(15, 0, 0.0, 5, 0.5)
+	myRobot = ModelPredictiveControl(0, 15, 0.0, 5, 0.5)
 	u = np.zeros(2*myRobot.horizon)
 		
 	mode = "multi"
 	dist_goal = 1000
 	cnt = 1
 	while not rospy.is_shutdown():
-		# if dist_goal <= 0.5:
-		# 	if cnt < len(myRobot.wayX):
-		# 		myRobot.goal[0]= myRobot.wayX[cnt]
-		# 		myRobot.goal[1]= myRobot.wayY[cnt]
-		# 		myRobot.psi_terminal= myRobot.wayPsi[cnt]
-		# 		u = np.zeros(2*myRobot.horizon)
-		# 		myRobot.pre_states.l = 0.5
-		# 	else:
-		# 		if dist_goal <= 0.1:
-		# 			pub.publish(Twist(Vector3(0, 0, 0),Vector3(0, 0, 0)))
-		# 			break
-		# 	cnt+=1
 		
 		dist_goal = np.sqrt((state[0] - myRobot.goal[0]) ** 2 + (state[1] - myRobot.goal[1]) ** 2)
 		res_x = abs(state[0]- myRobot.goal[0])
@@ -293,24 +281,19 @@ if __name__ == '__main__':
 						myRobot.pre_states.l = 1
 				else:
 					myRobot.pre_states.l -= 0.02
-					if myRobot.pre_states.l <= 0.5:
-						myRobot.pre_states.l = 0.5
+					if myRobot.pre_states.l <= 0.75:
+						myRobot.pre_states.l = 0.75
 					
 				l = myRobot.pre_states.l
 				myRobot.config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 		else:
-				myRobot.pre_states.l = 1
+				myRobot.pre_states.l = 1.0
 		if rx0 and rx2 and rx3 or mode == "solo":
 			rx1 = 0.0				
 			u = myRobot.optimize(state, u, mode)	
 			myRobot.v_optimal = u[0]
 			myRobot.psidot_optimal = u[myRobot.horizon]		
-			#pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
-			state = [myRobot.pre_states.x[0], myRobot.pre_states.y[0], myRobot.pre_states.psi[0]]
-			if state[2] > np.pi:
-				state[2] = state[2] - 2 * np.pi
-			elif state[2] < -np.pi:
-				state[2] = state[2] + 2 * np.pi
+			pub.publish(Twist(Vector3(u[0], 0, 0),Vector3(0, 0, u[myRobot.horizon])))
 			
 		if res_x < 0.01 and res_y < 0.01 and res_psi < 0.01:
 				print("Mean optimization Time: ", myRobot.te/myRobot.loop)

@@ -38,17 +38,17 @@ states_psi3 = []
 
 v0 = wz0 = v1 = wz1 = v2 = wz2 = v3 = wz3 = 0.0
 goal0 = [5.2, -2.2, 0]
-goal1 = [13, 0, 0]#[5.2, -3.8, 0.0]
+goal1 = [0, 13, 0]#[5.2, -3.8, 0.0]
 goal2= [1.7, 2.5, 0]
 goal3 = [1.7, -4, -np.pi/4]
 
 obsx = [-2.5, 0.34, 0.34, -1, -2.4]#[-1.7, -0.36, -1.7, -1, -0.36] #[-6, -6, -5, -5, -5.5] 
 obsy = [0.5, 0.51, -2.27, -0.8, -2.2]#[-1.5, -0.36, -0.36, -0.8, -1.5] #[0.5, 1.5, 1.5, 0.5, 1]
 
-shelfx = [7.5, 7.5]#[4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08, -5.79]
-shelfy = [1.2, -1.3]#[-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7, -0.95]
-shelfa = [4, 4]#[3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42]
-shelfb = [1.5, 1.0]#[0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18] 
+shelfx = [-1.5, 1.5]#[4.73, 4.73, 4.73, 4.73, 4.73, 4.73, 4.4, -0.8, -1.08, -5.79]
+shelfy = [8.22, 8.22]#[-8.66, -6.75, -4.84, -2.93, -1.02, 0.89, 6.67, 9.09, -0.7, -0.95]
+shelfa = [1, 1]#[3.87, 3.87, 3.87, 3.87, 3.87, 3.87, 4.7, 3.31, 2.9, 2.42]
+shelfb = [4.42, 4.42]#[0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 7.8, 1.76, 15.87, 18] 
 
 def statesCallback0(data):
 	global states_x0, states_y0, states_psi0, rx0, state0, init0
@@ -219,7 +219,14 @@ if __name__ == '__main__':
 	l = 1
 	squarex = []
 	squarey = []
+	d1 = []
+	d2 = []
+	d3 = []
+	d4 = []
+	d5 = []
+	d6 = []
 	config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
+	 
 	while not rospy.is_shutdown():
 		"""if rx0 >= 5 and rx1 >=5 and rx2 >= 5:
 			iter += 1
@@ -309,6 +316,7 @@ if __name__ == '__main__':
 		if rx0 >= 5 and rx1 >= 5 and rx2 >= 5 and rx3 >= 5:
 			config_matrix = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
 			plt.clf()
+			ax1.set_aspect(1)
 			iter+=1
 			simulation_time.append(iter * 1/freq)
 			dist_goal = np.sqrt((state1[0] - (goal1[0]))**2 + (state1[1] - goal1[1])**2)
@@ -318,6 +326,13 @@ if __name__ == '__main__':
 			dist_12.append(abs(dist(state1[0], state1[1], state2[0], state2[1]) - config_matrix[1][2]))
 			dist_13.append(abs(dist(state1[0], state1[1], state3[0], state3[1]) - config_matrix[1][3]))
 			dist_23.append(abs(dist(state2[0], state2[1], state3[0], state3[1]) - config_matrix[2][3]))
+			
+			d1.append(abs(dist(state0[0], state0[1], state1[0], state1[1])))
+			d2.append(abs(dist(state0[0], state0[1], state2[0], state2[1])))
+			d3.append(abs(dist(state0[0], state0[1], state3[0], state3[1])))
+			d4.append(abs(dist(state1[0], state1[1], state2[0], state2[1])))
+			d5.append(abs(dist(state1[0], state1[1], state3[0], state3[1])))
+			d6.append(abs(dist(state2[0], state2[1], state3[0], state3[1])))
 
 			plt.plot([state0[0], state1[0], state2[0], state3[0], state0[0]], [state0[1], state1[1], state2[1], state3[1], state0[1]], linestyle ='dotted')
 			for i in range(len(squarex)):
@@ -330,26 +345,25 @@ if __name__ == '__main__':
 			plt.scatter(state1[0], state1[1], linewidths=0.05, color='green')
 			plt.scatter(state2[0], state2[1], linewidths=0.05, color='blue')
 			plt.scatter(state3[0], state3[1], linewidths=0.05, color='orange')
-			plt.scatter(goal1[0]+2, goal1[1], linewidths=0.05, color='black')
-			for i in range(len(shelfx)):
+			# plt.scatter(goal1[0]+2, goal1[1], linewidths=0.05, color='black')
+			for i in range(len(shelfx)*0):
 				plt.plot([shelfx[i] + shelfa[i]/2, shelfx[i] + shelfa[i]/2, shelfx[i] - shelfa[i]/2, shelfx[i] - shelfa[i]/2, shelfx[i] + shelfa[i]/2], [shelfy[i] + shelfb[i]/2, shelfy[i]-shelfb[i]/2, shelfy[i]-shelfb[i]/2, shelfy[i]+shelfb[i]/2, shelfy[i]+shelfb[i]/2])
-			# plt.scatter(5, 0, linewidths=0.05, color='black')
-			# plt.text(10, 0, 'P2')
-			# plt.text(5, 0, 'P1')
+			
+			ax1.set_aspect(1)
 			plt.plot(states_x0, states_y0, linestyle=':',color='black')
 			plt.plot(states_x1, states_y1, linestyle=':',color='black')
 			plt.plot(states_x2, states_y2, linestyle=':',color='black')
 			plt.plot(states_x3, states_y3, linestyle=':',color='black')
-			ax1.set_aspect(1)
+			
 			if(dist_goal < 0.1):
 				break
 			plt.xlabel('x')
 			plt.ylabel('y')
-			plt.xlim(-2, 17)
-			plt.ylim(-2, 17)
+			plt.xlim(-5, 5)
+			plt.ylim(-2, 13)
 			plt.draw()
 			plt.pause(0.000001)
-			print(round(dist_01[-1], 3), round(dist_02[-1], 3), round(dist_03[-1], 3), round(dist_12[-1], 3), round(dist_13[-1], 3), round(dist_23[-1], 3))
+			# print(round(dist_01[-1], 3), round(dist_02[-1], 3), round(dist_03[-1], 3), round(dist_12[-1], 3), round(dist_13[-1], 3), round(dist_23[-1], 3))
 		"""if rx0 >= 5 and rx1 >= 5 and rx2 >=5 and rx3 >=5:
 			plt.clf()
 			ax1 = fig.add_subplot(1, 1, 1)
@@ -484,18 +498,61 @@ if __name__ == '__main__':
 	v_max = 1
 	psidot_max = 5
 
+	l = 1.5*1.2
+	config_matrix0 = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
+
+	l = 1.5*0.3
+	config_matrix1 = [[0, l, 2*l/np.sqrt(2), l], [l, 0, l, 2*l/np.sqrt(2)], [2*l/np.sqrt(2), l, 0, l], [l, 2*l/np.sqrt(2), l, 0]]
+
+	plt.figure(10)
+	plt.plot(simulation_time, d1)
+	plt.plot([simulation_time[-1], 0], [config_matrix0[0][1], config_matrix0[0][1]])
+	plt.plot([simulation_time[-1], 0], [config_matrix1[0][1], config_matrix1[0][1]])
+	plt.legend(["dist_01", "max_deform", "min_deform"])
+
+	plt.figure(11)
+	plt.plot(simulation_time, d2)
+	plt.plot([simulation_time[-1], 0], [config_matrix0[0][2], config_matrix0[0][2]])
+	plt.plot([simulation_time[-1], 0], [config_matrix1[0][2], config_matrix1[0][2]])
+	plt.legend(["dist_02", "max_deform", "min_deform"])
+
+	plt.figure(12)
+	plt.plot(simulation_time, d3)
+	plt.plot([simulation_time[-1], 0], [config_matrix0[0][3], config_matrix0[0][3]])
+	plt.plot([simulation_time[-1], 0], [config_matrix1[0][3], config_matrix1[0][3]])
+	plt.legend(["dist_03", "max_deform", "min_deform"])
+
+	plt.figure(13)
+	plt.plot(simulation_time, d4)
+	plt.plot([simulation_time[-1], 0], [config_matrix0[1][2], config_matrix0[1][2]])
+	plt.plot([simulation_time[-1], 0], [config_matrix1[1][2], config_matrix1[1][2]])
+	plt.legend(["dist_12", "max_deform", "min_deform"])
+
+	plt.figure(14)
+	plt.plot(simulation_time, d5)
+	plt.plot([simulation_time[-1], 0], [config_matrix0[1][3], config_matrix0[1][3]])
+	plt.plot([simulation_time[-1], 0], [config_matrix1[1][3], config_matrix1[1][3]])
+	plt.legend(["dist_13", "max_deform", "min_deform"])
+
+	plt.figure(15)
+	plt.plot(simulation_time, d6)
+	plt.plot([simulation_time[-1], 0], [config_matrix0[2][3], config_matrix0[2][3]])
+	plt.plot([simulation_time[-1], 0], [config_matrix1[2][3], config_matrix1[2][3]])
+	plt.legend(["dist_23", "max_deform", "min_deform"])
+
 	# print(round(np.mean(dist_01), 3), round(np.mean(dist_02), 3), round(np.mean(dist_03), 3), round(np.mean(dist_12), 3), round(np.mean(dist_13), 3), round(np.mean(dist_23), 3))
-	plt.figure(5)
-	plt.title('Distance_robots')
-	plt.plot(simulation_time, dist_01)
-	plt.plot(simulation_time, dist_02)
-	plt.plot(simulation_time, dist_03)
-	plt.plot(simulation_time, dist_12)
-	plt.plot([simulation_time[-1], 0], [0, 0])
-	plt.plot(simulation_time, dist_13)
-	plt.plot(simulation_time, dist_23)
-	plt.legend(["dist_01", "dist_02","dist_03", "dist_12", "dist_13", "dist_23"])
+	# plt.figure(5)
+	# plt.title('Distance_robots')
+	# plt.plot(simulation_time, dist_01)
+	# plt.plot(simulation_time, dist_02)
+	# plt.plot(simulation_time, dist_03)
+	# plt.plot(simulation_time, dist_12)
+	# plt.plot([simulation_time[-1], 0], [0, 0])
+	# plt.plot(simulation_time, dist_13)
+	# plt.plot(simulation_time, dist_23)
+	# plt.legend(["dist_01", "dist_02","dist_03", "dist_12", "dist_13", "dist_23"])
 	
+
 	# plt.figure(5)
 	# plt.title('residue_goal')
 	# plt.plot(simulation_time, simulation_x_residue0)
