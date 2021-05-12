@@ -11,3 +11,5 @@ Change gazebo model path by adding this line in ~/.bashrc
 * ```roslaunch multi_robot_mpc multi_robot_nodes.launch``` launch node for each robot
 * ```roslaunch multi_robot_mpc multi_robot_env.launch``` multirobot environment in gazebo  
 * ```roslaunch multi_robot_mpc multi_robot_spawn.launch``` spawn robots in the environment 
+  
+[Youtube](https://www.youtube.com/watch?v=1mIJbgoKXOM)
