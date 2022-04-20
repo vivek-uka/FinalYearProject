@@ -1,4 +1,4 @@
-### Multi Robot MPC  
+### Gradient Descent MPC for multiple mobile robots 
 Prerequisite Package: [Volta](https://github.com/botsync/volta)
 
 #### Building the code    
